@@ -1,0 +1,610 @@
+id,duration,speaker,split,pitch,age,gender,speaking_rate,speech_monotony,accent,corpusid
+AUD0000000468_S0000654,7.380127,AUD0000000468,test,very high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000005284_S0000262,9.879883,POD0000005284,test,slightly high-pitch,middle-aged adult,male,moderate speed,very expressive and animated,,GigaSpeech
+AUD0000001417_S0002797,5.6992188,AUD0000001417,test,low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+YOU0000005348_S0000053,10.419983,YOU0000005348,test,moderate pitch,young adult,male,fast,monotone,,GigaSpeech
+AUD0000001030_S0000357,8.839844,AUD0000001030,test,slightly high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000005458_S0001947,6.5996094,YOU0000005458,test,moderate pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000004936_S0000463,5.949707,YOU0000004936,test,slightly low-pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+AUD0000001417_S0001856,6.0,AUD0000001417,test,slightly low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+AUD0000000665_S0001416,6.9003906,AUD0000000665,test,slightly low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000000515_S0001865,6.520508,AUD0000000515,test,slightly low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+POD0000006148_S0000332,7.6899414,POD0000006148,test,slightly high-pitch,young adult,male,slightly slowly,slightly expressive and animated,,GigaSpeech
+AUD0000000443_S0000940,6.3999023,AUD0000000443,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000728_S0000635,9.390137,AUD0000000728,test,slightly low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000014733_S0000088,5.6900024,POD0000014733,test,moderate pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+POD0000003879_S0000067,9.539978,POD0000003879,test,slightly high-pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000590_S0004598,7.4023438,AUD0000000590,test,moderate pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000000185_S0000670,5.699951,AUD0000000185,test,moderate pitch,young adult,female,slightly slowly,monotone,,GigaSpeech
+YOU0000007485_S0003219,11.099609,YOU0000007485,test,low-pitch,middle-aged adult,male,slowly,monotone,,GigaSpeech
+AUD0000000590_S0003417,5.1015625,AUD0000000590,test,very high-pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000000667_S0008816,5.3007812,AUD0000000667,test,moderate pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000009252_S0000312,5.909912,POD0000009252,test,slightly low-pitch,young adult,female,fast,slightly expressive and animated,,GigaSpeech
+AUD0000000779_S0003243,5.399414,AUD0000000779,test,moderate pitch,middle-aged adult,female,fast,monotone,,GigaSpeech
+YOU0000013592_S0000009,6.799999,YOU0000013592,test,very high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000000329_S0001823,5.4101562,YOU0000000329,test,very high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000008860_S0000257,6.26001,POD0000008860,test,slightly low-pitch,young adult,male,fast,monotone,,GigaSpeech
+POD0000007471_S0000064,8.190002,POD0000007471,test,moderate pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000012107_S0000043,5.2299957,YOU0000012107,test,high-pitch,young adult,female,slightly fast,expressive and animated,,GigaSpeech
+AUD0000000369_S0000229,5.48999,AUD0000000369,test,very low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000001382_S0007929,5.6992188,AUD0000001382,test,slightly high-pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+YOU0000007043_S0000102,6.5999756,YOU0000007043,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000012051_S0000495,8.640137,YOU0000012051,test,slightly high-pitch,elderly,female,fast,expressive and animated,,GigaSpeech
+YOU0000012488_S0000157,5.380005,YOU0000012488,test,high-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000001716_S0003168,6.701172,AUD0000001716,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000003734_S0000093,19.349976,POD0000003734,test,slightly high-pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+POD0000014686_S0000057,6.230011,POD0000014686,test,moderate pitch,middle-aged adult,male,very fast,monotone,,GigaSpeech
+YOU0000017851_S0000005,7.120001,YOU0000017851,test,high-pitch,young adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000538_S0005043,5.4003906,AUD0000000538,test,slightly high-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000016258_S0002470,8.599609,YOU0000016258,test,slightly high-pitch,young adult,male,fast,very monotone,,GigaSpeech
+POD0000016017_S0000104,6.0300293,POD0000016017,test,slightly low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000012974_S0000225,9.719971,YOU0000012974,test,very high-pitch,middle-aged adult,male,fast,slightly expressive and animated,,GigaSpeech
+YOU0000004292_S0000039,9.180008,YOU0000004292,test,moderate pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000119_S0001759,5.0595703,AUD0000000119,test,slightly high-pitch,young adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000002778_S0002648,13.099609,YOU0000002778,test,moderate pitch,middle-aged adult,male,slowly,monotone,,GigaSpeech
+AUD0000001472_S0001249,9.299805,AUD0000001472,test,moderate pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000007384_S0000176,6.869995,YOU0000007384,test,slightly low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000006820_S0000314,12.0,YOU0000006820,test,high-pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+POD0000009666_S0000105,8.819946,POD0000009666,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000013215_S0001603,7.0,YOU0000013215,test,slightly high-pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+POD0000014665_S0000017,7.849991,POD0000014665,test,slightly high-pitch,middle-aged adult,male,fast,slightly expressive and animated,,GigaSpeech
+AUD0000001227_S0007511,6.0,AUD0000001227,test,moderate pitch,middle-aged adult,female,slightly slowly,monotone,,GigaSpeech
+POD0000003141_S0000238,14.289917,POD0000003141,test,slightly low-pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000001610_S0005127,5.5,AUD0000001610,test,high-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000011983_S0000051,9.700012,POD0000011983,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000010414_S0000099,9.570007,POD0000010414,test,slightly low-pitch,young adult,male,slowly,monotone,,GigaSpeech
+AUD0000001864_S0007537,8.0,AUD0000001864,test,moderate pitch,elderly,male,slowly,monotone,,GigaSpeech
+POD0000001101_S0000455,8.0998535,POD0000001101,test,slightly low-pitch,elderly,male,slowly,monotone,,GigaSpeech
+AUD0000001526_S0002049,7.0,AUD0000001526,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000001593_S0001830,6.9902344,AUD0000001593,test,high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000004889_S0000119,10.560059,YOU0000004889,test,moderate pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+POD0000007895_S0000221,5.619995,POD0000007895,test,slightly high-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000001109_S0007832,7.8007812,AUD0000001109,test,slightly low-pitch,middle-aged adult,female,slightly slowly,expressive and animated,,GigaSpeech
+AUD0000000098_S0001840,6.0,AUD0000000098,test,very low-pitch,middle-aged adult,female,moderate speed,expressive and animated,,GigaSpeech
+YOU0000000586_S0000161,11.580078,YOU0000000586,test,very high-pitch,middle-aged adult,male,slightly slowly,expressive and animated,,GigaSpeech
+YOU0000016328_S0000100,5.48999,YOU0000016328,test,slightly high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000020567_S0000039,15.4900055,YOU0000020567,test,very high-pitch,elderly,male,slowly,expressive and animated,,GigaSpeech
+POD0000011343_S0000036,5.950012,POD0000011343,test,high-pitch,elderly,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000006396_S0000181,6.090088,POD0000006396,test,slightly high-pitch,middle-aged adult,male,fast,very expressive and animated,,GigaSpeech
+POD0000005325_S0000308,6.7199707,POD0000005325,test,slightly low-pitch,young adult,male,fast,monotone,,GigaSpeech
+AUD0000001798_S0000045,5.369995,AUD0000001798,test,high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000013087_S0000022,10.540009,POD0000013087,test,very high-pitch,elderly,male,moderate speed,very expressive and animated,,GigaSpeech
+POD0000000773_S0000369,5.3100586,POD0000000773,test,moderate pitch,elderly,male,moderate speed,monotone,,GigaSpeech
+POD0000011733_S0000154,8.619995,POD0000011733,test,slightly low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000010310_S0000084,7.6499634,POD0000010310,test,slightly high-pitch,middle-aged adult,female,slightly fast,very expressive and animated,,GigaSpeech
+AUD0000000701_S0000283,5.8199463,AUD0000000701,test,low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+AUD0000001110_S0000002,12.970001,AUD0000001110,test,very low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+POD0000005988_S0000204,10.26001,POD0000005988,test,slightly high-pitch,young adult,male,slowly,monotone,,GigaSpeech
+AUD0000000378_S0000527,5.1000977,AUD0000000378,test,low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+POD0000002927_S0000138,5.4000244,POD0000002927,test,slightly low-pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000003632_S0000047,8.02002,POD0000003632,test,low-pitch,middle-aged adult,female,fast,monotone,,GigaSpeech
+AUD0000001383_S0002477,5.0,AUD0000001383,test,slightly high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000453_S0000588,5.3500977,AUD0000000453,test,very low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+POD0000006156_S0000111,6.9299316,POD0000006156,test,slightly low-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000000171_S0000120,5.01001,YOU0000000171,test,slightly low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+POD0000000152_S0000136,5.25,POD0000000152,test,low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+POD0000005224_S0000037,8.800049,POD0000005224,test,slightly low-pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000006216_S0000276,5.76001,POD0000006216,test,slightly low-pitch,young adult,male,fast,very monotone,,GigaSpeech
+POD0000011499_S0000078,7.200012,POD0000011499,test,slightly low-pitch,elderly,male,moderate speed,monotone,,GigaSpeech
+AUD0000000844_S0000996,6.5700684,AUD0000000844,test,very high-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000000692_S0011422,12.1015625,AUD0000000692,test,slightly low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+POD0000005704_S0001207,10.719727,POD0000005704,test,low-pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+YOU0000000477_S0000287,13.719971,YOU0000000477,test,slightly low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+AUD0000000208_S0001746,5.2998047,AUD0000000208,test,slightly low-pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000000798_S0011323,5.5,AUD0000000798,test,slightly low-pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000003734_S0000095,9.100037,POD0000003734,test,high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000003345_S0000242,5.1500244,YOU0000003345,test,slightly low-pitch,elderly,male,slightly fast,very monotone,,GigaSpeech
+POD0000009050_S0000677,6.830078,POD0000009050,test,low-pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+POD0000006467_S0000049,9.029999,POD0000006467,test,moderate pitch,young adult,male,slightly slowly,very monotone,,GigaSpeech
+YOU0000014641_S0000072,5.049988,YOU0000014641,test,slightly low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000014449_S0000188,10.75,POD0000014449,test,low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000001213_S0008452,7.9023438,AUD0000001213,test,low-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000001213_S0019229,10.0,AUD0000001213,test,slightly low-pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000010843_S0000187,5.6101074,YOU0000010843,test,moderate pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+POD0000006259_S0000067,8.700012,POD0000006259,test,slightly high-pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000001737_S0006612,17.699219,AUD0000001737,test,slightly low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000017968_S0000458,6.209961,YOU0000017968,test,very high-pitch,elderly,male,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000280_S0001417,6.120117,AUD0000000280,test,moderate pitch,young adult,male,slightly fast,very monotone,,GigaSpeech
+AUD0000000915_S0006183,12.1015625,AUD0000000915,test,slightly low-pitch,young adult,female,slightly fast,expressive and animated,,GigaSpeech
+AUD0000001763_S0000784,5.76001,AUD0000001763,test,slightly low-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000004365_S0000846,6.419922,YOU0000004365,test,high-pitch,middle-aged adult,male,very fast,monotone,,GigaSpeech
+YOU0000010934_S0000024,5.470001,YOU0000010934,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000008828_S0000521,5.790039,POD0000008828,test,slightly low-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+POD0000010737_S0000036,16.119995,POD0000010737,test,slightly high-pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000000605_S0000455,8.0998535,POD0000000605,test,moderate pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+YOU0000007044_S0000003,6.8100014,YOU0000007044,test,slightly low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+AUD0000001688_S0000015,5.880005,AUD0000001688,test,moderate pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+POD0000003235_S0000168,7.6500244,POD0000003235,test,slightly high-pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000005317_S0000224,15.97998,POD0000005317,test,slightly high-pitch,young adult,male,fast,slightly expressive and animated,,GigaSpeech
+POD0000006185_S0000151,10.919983,POD0000006185,test,moderate pitch,young adult,male,slowly,monotone,,GigaSpeech
+AUD0000001776_S0005295,6.5996094,AUD0000001776,test,moderate pitch,middle-aged adult,female,fast,slightly expressive and animated,,GigaSpeech
+AUD0000000780_S0002517,5.399414,AUD0000000780,test,slightly high-pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000005865_S0000439,6.840088,YOU0000005865,test,slightly low-pitch,middle-aged adult,female,fast,monotone,,GigaSpeech
+AUD0000000366_S0005393,6.9003906,AUD0000000366,test,slightly low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+YOU0000017133_S0000288,12.3498535,YOU0000017133,test,high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000000423_S0000244,5.4799805,POD0000000423,test,very high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000001105_S0004762,5.8007812,AUD0000001105,test,very low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000004841_S0000319,8.890137,YOU0000004841,test,high-pitch,teenager,female,fast,slightly expressive and animated,,GigaSpeech
+YOU0000006263_S0000368,5.25,YOU0000006263,test,high-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000019630_S0000497,5.069824,YOU0000019630,test,moderate pitch,young adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000004420_S0000018,8.839996,YOU0000004420,test,low-pitch,middle-aged adult,female,slowly,slightly expressive and animated,,GigaSpeech
+YOU0000020072_S0000020,9.87999,YOU0000020072,test,slightly high-pitch,young adult,male,very fast,monotone,,GigaSpeech
+AUD0000001380_S0000678,5.1601562,AUD0000001380,test,moderate pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000013623_S0000038,5.350006,POD0000013623,test,high-pitch,young adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000008924_S0000226,9.370117,POD0000008924,test,moderate pitch,middle-aged adult,male,very fast,slightly expressive and animated,,GigaSpeech
+POD0000009189_S0000078,7.459961,POD0000009189,test,slightly high-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000001832_S0003246,5.100586,AUD0000001832,test,low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+POD0000005255_S0000037,5.369995,POD0000005255,test,slightly high-pitch,young adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000012827_S0000114,6.369995,POD0000012827,test,slightly low-pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000008530_S0000278,10.589966,YOU0000008530,test,high-pitch,elderly,female,moderate speed,expressive and animated,,GigaSpeech
+YOU0000017887_S0000341,10.560059,YOU0000017887,test,slightly high-pitch,elderly,male,slightly slowly,monotone,,GigaSpeech
+AUD0000000467_S0000814,5.620117,AUD0000000467,test,moderate pitch,elderly,male,slightly fast,monotone,,GigaSpeech
+POD0000000543_S0000222,5.619995,POD0000000543,test,slightly low-pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000002158_S0000049,6.329956,POD0000002158,test,low-pitch,young adult,male,very fast,very monotone,,GigaSpeech
+POD0000009048_S0000564,7.3398438,POD0000009048,test,moderate pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+POD0000000744_S0000256,16.54004,POD0000000744,test,slightly high-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000016642_S0000217,5.6101074,YOU0000016642,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000233_S0007064,5.5996094,AUD0000000233,test,slightly low-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000007372_S0000069,11.339996,YOU0000007372,test,slightly high-pitch,young adult,female,moderate speed,expressive and animated,,GigaSpeech
+POD0000000949_S0000159,7.73999,POD0000000949,test,moderate pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+AUD0000001021_S0000937,8.130371,AUD0000001021,test,slightly low-pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+POD0000009615_S0000058,10.299988,POD0000009615,test,moderate pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000011856_S0000157,16.920166,YOU0000011856,test,very high-pitch,middle-aged adult,male,slightly fast,very expressive and animated,,GigaSpeech
+AUD0000001547_S0010122,6.1992188,AUD0000001547,test,moderate pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+AUD0000001385_S0001838,14.0,AUD0000001385,test,slightly high-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000332_S0008740,5.1992188,AUD0000000332,test,very high-pitch,middle-aged adult,male,moderate speed,very expressive and animated,,GigaSpeech
+POD0000001193_S0000586,6.3901367,POD0000001193,test,high-pitch,middle-aged adult,female,slightly slowly,expressive and animated,,GigaSpeech
+POD0000015455_S0000229,6.0599365,POD0000015455,test,slightly high-pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+POD0000001768_S0000001,5.0699997,POD0000001768,test,slightly low-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000017425_S0000276,5.1900024,YOU0000017425,test,slightly high-pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000017190_S0000004,10.649998,YOU0000017190,test,high-pitch,young adult,female,fast,expressive and animated,,GigaSpeech
+POD0000014196_S0000084,8.529968,POD0000014196,test,moderate pitch,elderly,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000013416_S0000248,5.9000244,POD0000013416,test,slightly low-pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000000556_S0000475,5.4001465,AUD0000000556,test,moderate pitch,elderly,male,slightly fast,monotone,,GigaSpeech
+AUD0000000246_S0001062,6.0302734,AUD0000000246,test,slightly low-pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+POD0000008619_S0000304,5.9699707,POD0000008619,test,moderate pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+AUD0000001072_S0001298,5.080078,AUD0000001072,test,moderate pitch,young adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000010513_S0000221,5.040039,YOU0000010513,test,high-pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+AUD0000000712_S0000803,7.8398438,AUD0000000712,test,high-pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000016400_S0000021,5.230011,POD0000016400,test,slightly low-pitch,elderly,male,slightly fast,monotone,,GigaSpeech
+YOU0000011683_S0000037,5.7599945,YOU0000011683,test,moderate pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000000199_S0000704,5.01001,AUD0000000199,test,moderate pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000019652_S0000041,6.48999,YOU0000019652,test,low-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000000242_S0000010,11.470001,AUD0000000242,test,low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+POD0000000970_S0000165,18.869995,POD0000000970,test,moderate pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000000797_S0001969,5.100586,AUD0000000797,test,moderate pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+POD0000003495_S0000246,6.910034,POD0000003495,test,high-pitch,young adult,male,moderate speed,very expressive and animated,,GigaSpeech
+YOU0000000410_S0000020,6.099991,YOU0000000410,test,moderate pitch,young adult,female,slightly fast,very expressive and animated,,GigaSpeech
+YOU0000006988_S0000829,6.120117,YOU0000006988,test,moderate pitch,middle-aged adult,male,very fast,monotone,,GigaSpeech
+AUD0000001547_S0008582,5.5,AUD0000001547,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000019384_S0000055,8.549988,YOU0000019384,test,moderate pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+POD0000007887_S0000248,7.5999756,POD0000007887,test,moderate pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000001803_S0001954,5.5996094,AUD0000001803,test,very high-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000203_S0001527,5.909668,AUD0000000203,test,very low-pitch,middle-aged adult,male,fast,very monotone,,GigaSpeech
+POD0000008724_S0000066,9.52002,POD0000008724,test,slightly low-pitch,middle-aged adult,male,slightly slowly,very monotone,,GigaSpeech
+YOU0000005107_S0000171,6.0599976,YOU0000005107,test,very high-pitch,middle-aged adult,male,moderate speed,expressive and animated,,GigaSpeech
+AUD0000000780_S0003186,14.699219,AUD0000000780,test,very high-pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000001396_S0003000,13.600586,AUD0000001396,test,slightly low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000001522_S0000262,14.050049,AUD0000001522,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000002813_S0000263,6.6400146,YOU0000002813,test,moderate pitch,middle-aged adult,male,moderate speed,expressive and animated,,GigaSpeech
+POD0000014458_S0000019,6.8099976,POD0000014458,test,high-pitch,young adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000004857_S0000261,5.4299316,POD0000004857,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000005947_S0000095,12.910034,POD0000005947,test,moderate pitch,young adult,male,slightly slowly,monotone,,GigaSpeech
+AUD0000000636_S0002784,5.0,AUD0000000636,test,very high-pitch,middle-aged adult,male,slightly fast,expressive and animated,,GigaSpeech
+AUD0000000823_S0001740,6.3203125,AUD0000000823,test,high-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000020679_S0000482,5.8598633,YOU0000020679,test,moderate pitch,elderly,male,moderate speed,monotone,,GigaSpeech
+YOU0000003945_S0000293,5.6400146,YOU0000003945,test,slightly low-pitch,middle-aged adult,female,fast,monotone,,GigaSpeech
+AUD0000000072_S0001698,15.200195,AUD0000000072,test,low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+POD0000013503_S0000027,9.940002,POD0000013503,test,slightly low-pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000010226_S0000087,8.76001,POD0000010226,test,moderate pitch,young adult,female,fast,monotone,,GigaSpeech
+POD0000007327_S0000125,8.349976,POD0000007327,test,slightly low-pitch,middle-aged adult,female,slightly slowly,slightly expressive and animated,,GigaSpeech
+YOU0000013191_S0000122,12.869995,YOU0000013191,test,high-pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000660_S0003365,8.100586,AUD0000000660,test,moderate pitch,young adult,female,fast,slightly expressive and animated,,GigaSpeech
+POD0000009568_S0000081,8.690002,POD0000009568,test,moderate pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+YOU0000020234_S0000436,13.629883,YOU0000020234,test,high-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+AUD0000001349_S0003485,5.5996094,AUD0000001349,test,slightly low-pitch,middle-aged adult,female,moderate speed,very monotone,,GigaSpeech
+AUD0000000366_S0005207,5.3984375,AUD0000000366,test,low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000001117_S0001925,5.830078,AUD0000001117,test,slightly low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000014751_S0000157,14.380005,POD0000014751,test,slightly low-pitch,middle-aged adult,male,very fast,very monotone,,GigaSpeech
+POD0000008532_S0000438,8.399902,POD0000008532,test,high-pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000012008_S0000114,14.410034,YOU0000012008,test,slightly high-pitch,young adult,male,fast,slightly expressive and animated,,GigaSpeech
+POD0000006581_S0000192,10.390015,POD0000006581,test,moderate pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000008744_S0000419,5.319824,POD0000008744,test,slightly high-pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+POD0000006608_S0000398,11.280029,POD0000006608,test,moderate pitch,young adult,male,slightly fast,very monotone,,GigaSpeech
+YOU0000005677_S0000330,5.5600586,YOU0000005677,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000009276_S0000082,14.880005,POD0000009276,test,very low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000001461_S0003486,6.8007812,AUD0000001461,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000020576_S0000478,5.9401855,YOU0000020576,test,very high-pitch,middle-aged adult,male,slightly fast,expressive and animated,,GigaSpeech
+AUD0000001351_S0003435,8.300781,AUD0000001351,test,very low-pitch,middle-aged adult,female,slightly slowly,very expressive and animated,,GigaSpeech
+POD0000010206_S0000120,11.529907,POD0000010206,test,slightly low-pitch,young adult,female,very fast,monotone,,GigaSpeech
+POD0000001043_S0000229,8.580078,POD0000001043,test,moderate pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000001832_S0000498,8.189941,YOU0000001832,test,slightly high-pitch,middle-aged adult,female,slowly,monotone,,GigaSpeech
+POD0000006351_S0000218,6.369873,POD0000006351,test,moderate pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+POD0000000585_S0000032,7.669998,POD0000000585,test,low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000003533_S0000042,11.610001,POD0000003533,test,moderate pitch,young adult,male,fast,monotone,,GigaSpeech
+AUD0000000660_S0008085,5.0,AUD0000000660,test,moderate pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000006775_S0000233,7.5499268,YOU0000006775,test,slightly high-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000005359_S0002904,10.900391,YOU0000005359,test,slightly low-pitch,young adult,male,fast,very monotone,,GigaSpeech
+YOU0000008772_S0000774,6.1501465,YOU0000008772,test,slightly high-pitch,elderly,male,moderate speed,very monotone,,GigaSpeech
+AUD0000000777_S0000209,10.440002,AUD0000000777,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000404_S0001168,6.600586,AUD0000000404,test,moderate pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+POD0000014728_S0000231,8.930054,POD0000014728,test,low-pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000016587_S0000082,5.4400024,YOU0000016587,test,very high-pitch,middle-aged adult,male,slightly fast,very expressive and animated,,GigaSpeech
+AUD0000001707_S0000902,8.220215,AUD0000001707,test,slightly low-pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+AUD0000001660_S0000854,8.560059,AUD0000001660,test,slightly low-pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000005962_S0000578,6.9299316,YOU0000005962,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000009165_S0000311,5.2800293,YOU0000009165,test,slightly low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+POD0000010376_S0000039,15.309998,POD0000010376,test,slightly low-pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000002887_S0000820,8.620117,YOU0000002887,test,very high-pitch,young adult,female,slightly fast,expressive and animated,,GigaSpeech
+POD0000009965_S0000132,7.8900146,POD0000009965,test,slightly low-pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000010637_S0000117,5.8599854,POD0000010637,test,slightly high-pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000844_S0006207,6.6992188,AUD0000000844,test,high-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000000381_S0002039,5.189453,AUD0000000381,test,high-pitch,young adult,male,fast,monotone,,GigaSpeech
+YOU0000005018_S0000185,6.0,YOU0000005018,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000000348_S0000581,5.580078,AUD0000000348,test,very low-pitch,middle-aged adult,male,fast,very monotone,,GigaSpeech
+YOU0000008951_S0000377,6.0600586,YOU0000008951,test,high-pitch,young adult,female,fast,very expressive and animated,,GigaSpeech
+POD0000008770_S0000055,5.290039,POD0000008770,test,moderate pitch,young adult,female,fast,monotone,,GigaSpeech
+AUD0000000844_S0007218,8.0,AUD0000000844,test,high-pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+POD0000014365_S0000047,8.440002,POD0000014365,test,moderate pitch,elderly,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000006311_S0000107,6.4799805,POD0000006311,test,low-pitch,middle-aged adult,male,slightly slowly,very monotone,,GigaSpeech
+POD0000013686_S0000015,6.9000015,POD0000013686,test,moderate pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000009573_S0000023,11.790009,POD0000009573,test,low-pitch,middle-aged adult,male,fast,very monotone,,GigaSpeech
+POD0000006105_S0000149,10.670044,POD0000006105,test,slightly high-pitch,young adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000009535_S0000243,15.119995,POD0000009535,test,low-pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000000542_S0000036,5.2700043,AUD0000000542,test,slightly low-pitch,middle-aged adult,female,fast,monotone,,GigaSpeech
+POD0000009944_S0000237,5.6400146,POD0000009944,test,very high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000016476_S0000105,10.649963,YOU0000016476,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000006143_S0000323,7.169922,POD0000006143,test,low-pitch,teenager,male,fast,monotone,,GigaSpeech
+POD0000009998_S0000118,6.4699707,POD0000009998,test,high-pitch,middle-aged adult,female,slightly fast,expressive and animated,,GigaSpeech
+POD0000000293_S0000095,5.619995,POD0000000293,test,high-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000014843_S0000121,9.460022,YOU0000014843,test,slightly high-pitch,elderly,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000000597_S0000813,5.1000977,AUD0000000597,test,low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+YOU0000006846_S0000560,6.090088,YOU0000006846,test,slightly high-pitch,young adult,male,very fast,monotone,,GigaSpeech
+POD0000003388_S0000051,8.639984,POD0000003388,test,very low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000006434_S0000128,10.080078,POD0000006434,test,slightly low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+AUD0000001524_S0004585,5.7001953,AUD0000001524,test,moderate pitch,young adult,female,fast,very expressive and animated,,GigaSpeech
+POD0000010560_S0000184,5.5600586,POD0000010560,test,slightly low-pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000004724_S0000004,16.39,YOU0000004724,test,slightly high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000016575_S0000264,12.430054,YOU0000016575,test,high-pitch,young adult,male,moderate speed,very expressive and animated,,GigaSpeech
+POD0000003114_S0000000,7.07,POD0000003114,test,slightly low-pitch,young adult,male,fast,monotone,,GigaSpeech
+AUD0000001670_S0003147,10.0,AUD0000001670,test,very high-pitch,young adult,female,slightly fast,very expressive and animated,,GigaSpeech
+POD0000015109_S0000162,10.550049,POD0000015109,test,low-pitch,middle-aged adult,male,slowly,monotone,,GigaSpeech
+POD0000009676_S0000022,8.719986,POD0000009676,test,slightly low-pitch,young adult,female,fast,slightly expressive and animated,,GigaSpeech
+AUD0000000152_S0004840,8.900391,AUD0000000152,test,very low-pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000017968_S0000590,11.950195,YOU0000017968,test,very high-pitch,elderly,male,moderate speed,expressive and animated,,GigaSpeech
+POD0000003121_S0000222,10.779907,POD0000003121,test,slightly low-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000005458_S0000091,5.3399963,YOU0000005458,test,high-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000000453_S0000031,6.600006,POD0000000453,test,slightly low-pitch,elderly,male,slightly fast,very monotone,,GigaSpeech
+POD0000003813_S0000041,10.380005,POD0000003813,test,moderate pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000005362_S0000177,5.2800293,POD0000005362,test,moderate pitch,young adult,female,very fast,expressive and animated,,GigaSpeech
+AUD0000000719_S0006598,10.0,AUD0000000719,test,slightly low-pitch,elderly,male,slightly slowly,monotone,,GigaSpeech
+YOU0000002925_S0000297,5.4300537,YOU0000002925,test,very high-pitch,middle-aged adult,male,slightly fast,expressive and animated,,GigaSpeech
+POD0000012496_S0000048,7.950012,POD0000012496,test,moderate pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000000231_S0000051,6.9599915,POD0000000231,test,slightly low-pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000010747_S0000051,7.889984,POD0000010747,test,slightly high-pitch,middle-aged adult,female,fast,monotone,,GigaSpeech
+YOU0000003031_S0000012,6.799988,YOU0000003031,test,very high-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000918_S0002724,5.2998047,AUD0000000918,test,slightly high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000014286_S0000103,7.3900146,POD0000014286,test,moderate pitch,young adult,female,fast,monotone,,GigaSpeech
+YOU0000007866_S0001111,6.0302734,YOU0000007866,test,low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+AUD0000001775_S0002389,5.2998047,AUD0000001775,test,very low-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000001508_S0000657,10.949951,AUD0000001508,test,slightly high-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000017618_S0000049,8.670013,YOU0000017618,test,moderate pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+AUD0000001842_S0000347,6.340088,AUD0000001842,test,slightly high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000009153_S0000388,15.620117,POD0000009153,test,slightly low-pitch,young adult,male,very fast,very monotone,,GigaSpeech
+YOU0000005036_S0000231,7.540039,YOU0000005036,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000012246_S0000046,8.600037,YOU0000012246,test,moderate pitch,young adult,male,fast,monotone,,GigaSpeech
+YOU0000020521_S0000563,8.679932,YOU0000020521,test,moderate pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000017875_S0000084,9.470001,YOU0000017875,test,slightly high-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000001726_S0000247,5.880005,YOU0000001726,test,high-pitch,young adult,female,fast,slightly expressive and animated,,GigaSpeech
+AUD0000001848_S0005809,6.1992188,AUD0000001848,test,slightly low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000000698_S0003751,5.0996094,AUD0000000698,test,slightly high-pitch,young adult,female,moderate speed,monotone,,GigaSpeech
+AUD0000000220_S0002668,9.099609,AUD0000000220,test,moderate pitch,middle-aged adult,female,moderate speed,expressive and animated,,GigaSpeech
+POD0000000655_S0000385,8.530029,POD0000000655,test,moderate pitch,elderly,female,moderate speed,monotone,,GigaSpeech
+AUD0000000987_S0002661,5.399414,AUD0000000987,test,slightly low-pitch,middle-aged adult,female,fast,monotone,,GigaSpeech
+YOU0000019556_S0000260,13.089844,YOU0000019556,test,slightly low-pitch,young adult,male,moderate speed,very monotone,,GigaSpeech
+YOU0000014562_S0000508,5.0600586,YOU0000014562,test,high-pitch,young adult,female,very fast,expressive and animated,,GigaSpeech
+POD0000006064_S0000136,13.5,POD0000006064,test,moderate pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000006741_S0000711,7.8601074,YOU0000006741,test,slightly high-pitch,young adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000001206_S0002507,5.8984375,AUD0000001206,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000009365_S0000330,11.280029,POD0000009365,test,very high-pitch,young adult,male,moderate speed,expressive and animated,,GigaSpeech
+POD0000009246_S0000168,5.050049,POD0000009246,test,moderate pitch,young adult,female,fast,monotone,,GigaSpeech
+POD0000000876_S0000110,9.919983,POD0000000876,test,slightly low-pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000014383_S0000025,8.7400055,YOU0000014383,test,high-pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+POD0000009830_S0000167,6.4699707,POD0000009830,test,slightly high-pitch,young adult,male,fast,monotone,,GigaSpeech
+YOU0000014999_S0000912,8.560059,YOU0000014999,test,slightly high-pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000000212_S0001696,5.3100586,AUD0000000212,test,very low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+AUD0000001497_S0002694,7.0,AUD0000001497,test,very low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+POD0000015074_S0000162,16.809998,POD0000015074,test,slightly low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000798_S0011551,6.1015625,AUD0000000798,test,moderate pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000013166_S0000254,5.48999,YOU0000013166,test,very high-pitch,middle-aged adult,male,fast,expressive and animated,,GigaSpeech
+YOU0000010851_S0000185,5.5200195,YOU0000010851,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000008918_S0000123,7.079956,POD0000008918,test,low-pitch,young adult,male,slightly fast,very monotone,,GigaSpeech
+YOU0000011648_S0000107,5.0999756,YOU0000011648,test,very high-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000017499_S0000241,5.2800293,YOU0000017499,test,moderate pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+YOU0000013675_S0000247,5.079956,YOU0000013675,test,very high-pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000006149_S0000022,6.550003,POD0000006149,test,high-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+POD0000014836_S0000113,5.25,POD0000014836,test,slightly high-pitch,middle-aged adult,male,fast,slightly expressive and animated,,GigaSpeech
+POD0000014462_S0000266,8.73999,POD0000014462,test,slightly high-pitch,elderly,male,slightly fast,monotone,,GigaSpeech
+AUD0000000213_S0004144,6.3984375,AUD0000000213,test,high-pitch,middle-aged adult,male,slightly slowly,very expressive and animated,,GigaSpeech
+AUD0000001785_S0001689,6.9902344,AUD0000001785,test,low-pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000010862_S0000185,7.959961,POD0000010862,test,very low-pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000007755_S0000295,7.800049,POD0000007755,test,moderate pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000008978_S0000154,7.290039,POD0000008978,test,low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000008443_S0000287,13.47998,POD0000008443,test,high-pitch,young adult,female,slightly fast,very expressive and animated,,GigaSpeech
+POD0000005338_S0000172,11.789795,POD0000005338,test,slightly low-pitch,young adult,male,fast,slightly expressive and animated,,GigaSpeech
+AUD0000000502_S0003579,9.699219,AUD0000000502,test,moderate pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000001565_S0000278,7.1099854,AUD0000001565,test,slightly low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000001461_S0000694,6.119873,AUD0000001461,test,slightly low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000000337_S0002029,5.7402344,AUD0000000337,test,very low-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000006268_S0000130,5.5499268,POD0000006268,test,slightly high-pitch,young adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000008551_S0000155,6.0,POD0000008551,test,low-pitch,middle-aged adult,female,very fast,monotone,,GigaSpeech
+POD0000008834_S0000070,13.059998,POD0000008834,test,slightly low-pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+POD0000009729_S0000152,13.650024,POD0000009729,test,moderate pitch,middle-aged adult,male,fast,very monotone,,GigaSpeech
+YOU0000002024_S0000165,6.3900146,YOU0000002024,test,slightly low-pitch,elderly,male,fast,monotone,,GigaSpeech
+YOU0000013195_S0002060,14.399414,YOU0000013195,test,moderate pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+POD0000005339_S0000087,16.279968,POD0000005339,test,slightly low-pitch,elderly,male,slightly slowly,monotone,,GigaSpeech
+AUD0000001678_S0001846,5.5200195,AUD0000001678,test,moderate pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+POD0000004619_S0000063,8.309998,POD0000004619,test,moderate pitch,middle-aged adult,female,fast,slightly expressive and animated,,GigaSpeech
+POD0000002954_S0000172,18.130005,POD0000002954,test,slightly low-pitch,teenager,female,moderate speed,monotone,,GigaSpeech
+AUD0000000069_S0004132,7.0996094,AUD0000000069,test,slightly low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000013666_S0000086,8.73999,POD0000013666,test,slightly low-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000769_S0001097,5.2802734,AUD0000000769,test,very low-pitch,middle-aged adult,male,fast,very monotone,,GigaSpeech
+POD0000003685_S0000063,8.679993,POD0000003685,test,slightly high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000538_S0003330,5.5996094,AUD0000000538,test,moderate pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+YOU0000014189_S0000112,5.9000244,YOU0000014189,test,slightly high-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000014848_S0000013,5.279999,POD0000014848,test,slightly low-pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000002998_S0000165,5.2299805,POD0000002998,test,moderate pitch,young adult,male,moderate speed,very expressive and animated,,GigaSpeech
+POD0000000463_S0000134,6.790039,POD0000000463,test,low-pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000007955_S0000218,15.280029,POD0000007955,test,moderate pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+POD0000010378_S0000118,13.869995,POD0000010378,test,moderate pitch,teenager,female,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000032_S0000094,6.5700073,AUD0000000032,test,moderate pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000015807_S0000033,7.0,YOU0000015807,test,very high-pitch,young adult,female,slightly fast,expressive and animated,,GigaSpeech
+YOU0000009850_S0000156,6.9299316,YOU0000009850,test,very high-pitch,young adult,female,slightly slowly,very expressive and animated,,GigaSpeech
+AUD0000001034_S0001634,7.2998047,AUD0000001034,test,moderate pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000000362_S0000631,5.5898438,AUD0000000362,test,low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+POD0000005555_S0000434,10.109863,POD0000005555,test,slightly high-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000005235_S0000018,8.630005,YOU0000005235,test,slightly low-pitch,elderly,female,slightly slowly,monotone,,GigaSpeech
+POD0000015833_S0000013,6.689995,POD0000015833,test,moderate pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000001143_S0007062,8.203125,AUD0000001143,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000000993_S0000021,5.4000015,POD0000000993,test,slightly low-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000000062_S0003178,11.300781,AUD0000000062,test,slightly low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000000181_S0001836,5.830078,AUD0000000181,test,moderate pitch,teenager,female,slightly fast,monotone,,GigaSpeech
+YOU0000015614_S0000234,14.97998,YOU0000015614,test,moderate pitch,elderly,male,slightly fast,monotone,,GigaSpeech
+POD0000007278_S0000313,10.77002,POD0000007278,test,moderate pitch,young adult,male,slowly,monotone,,GigaSpeech
+POD0000008453_S0000174,14.829956,POD0000008453,test,moderate pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000005999_S0000542,9.629883,YOU0000005999,test,high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000019150_S0000008,10.770004,YOU0000019150,test,low-pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+AUD0000000381_S0004437,5.5,AUD0000000381,test,moderate pitch,young adult,female,slightly fast,very expressive and animated,,GigaSpeech
+POD0000009080_S0000539,6.73999,POD0000009080,test,very high-pitch,middle-aged adult,male,fast,slightly expressive and animated,,GigaSpeech
+POD0000005464_S0000264,5.4500732,POD0000005464,test,slightly low-pitch,elderly,male,slightly fast,monotone,,GigaSpeech
+POD0000003324_S0000125,12.219971,POD0000003324,test,slightly low-pitch,middle-aged adult,female,fast,slightly expressive and animated,,GigaSpeech
+YOU0000009971_S0000231,10.97998,YOU0000009971,test,slightly high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000007896_S0000175,12.200012,POD0000007896,test,moderate pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000005474_S0000300,11.430054,POD0000005474,test,slightly high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000001382_S0006189,11.0,AUD0000001382,test,moderate pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+AUD0000001726_S0000046,6.6200104,AUD0000001726,test,moderate pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000000952_S0000385,11.639648,AUD0000000952,test,low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+YOU0000014425_S0000061,8.129944,YOU0000014425,test,slightly low-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000009949_S0000091,5.4699707,YOU0000009949,test,moderate pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000001147_S0002687,5.2001953,AUD0000001147,test,slightly high-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000000580_S0000782,10.090088,AUD0000000580,test,moderate pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000010539_S0000150,11.140015,POD0000010539,test,slightly low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+POD0000014475_S0000155,7.4699707,POD0000014475,test,very high-pitch,middle-aged adult,male,fast,slightly expressive and animated,,GigaSpeech
+AUD0000000107_S0000165,8.610046,AUD0000000107,test,moderate pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000191_S0001028,7.680176,AUD0000000191,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000001010_S0000249,6.210083,POD0000001010,test,low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000001442_S0007263,5.701172,AUD0000001442,test,slightly high-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000818_S0004838,10.3984375,AUD0000000818,test,slightly low-pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000018402_S0000090,8.460022,YOU0000018402,test,high-pitch,middle-aged adult,male,slightly slowly,slightly expressive and animated,,GigaSpeech
+YOU0000004782_S0000036,9.299988,YOU0000004782,test,high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000006087_S0000066,11.52002,POD0000006087,test,high-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000005824_S0000990,7.6904297,POD0000005824,test,slightly low-pitch,young adult,male,slightly fast,very monotone,,GigaSpeech
+YOU0000004395_S0000139,8.719971,YOU0000004395,test,slightly low-pitch,middle-aged adult,male,fast,very monotone,,GigaSpeech
+POD0000003223_S0000072,6.779999,POD0000003223,test,slightly high-pitch,middle-aged adult,female,fast,slightly expressive and animated,,GigaSpeech
+POD0000007913_S0000283,5.130005,POD0000007913,test,high-pitch,young adult,male,moderate speed,very expressive and animated,,GigaSpeech
+POD0000001217_S0000149,17.349976,POD0000001217,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000002048_S0000030,8.559998,POD0000002048,test,low-pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000003173_S0000095,7.7699585,POD0000003173,test,slightly high-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000016128_S0000398,5.550049,YOU0000016128,test,slightly high-pitch,young adult,female,slowly,slightly expressive and animated,,GigaSpeech
+YOU0000014308_S0000893,8.509766,YOU0000014308,test,slightly low-pitch,middle-aged adult,male,fast,very monotone,,GigaSpeech
+YOU0000005179_S0000988,9.209961,YOU0000005179,test,moderate pitch,middle-aged adult,male,slowly,very monotone,,GigaSpeech
+POD0000005819_S0001314,18.219727,POD0000005819,test,slightly low-pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+POD0000009095_S0000302,7.0,POD0000009095,test,moderate pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+POD0000006506_S0000174,9.630005,POD0000006506,test,moderate pitch,young adult,male,slightly slowly,monotone,,GigaSpeech
+AUD0000000650_S0007917,10.199219,AUD0000000650,test,slightly high-pitch,elderly,male,moderate speed,monotone,,GigaSpeech
+YOU0000005555_S0000232,8.530029,YOU0000005555,test,moderate pitch,young adult,female,slowly,slightly expressive and animated,,GigaSpeech
+AUD0000000252_S0010205,6.5,AUD0000000252,test,very high-pitch,young adult,male,fast,expressive and animated,,GigaSpeech
+YOU0000005179_S0000316,7.7697754,YOU0000005179,test,slightly high-pitch,elderly,male,fast,monotone,,GigaSpeech
+AUD0000000175_S0003240,5.2998047,AUD0000000175,test,low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000001795_S0000102,9.670044,YOU0000001795,test,moderate pitch,young adult,male,fast,monotone,,GigaSpeech
+POD0000014754_S0000220,7.080078,POD0000014754,test,low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000001652_S0001801,7.2001953,AUD0000001652,test,slightly low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000004709_S0000051,6.0799866,YOU0000004709,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000009901_S0000100,6.630005,POD0000009901,test,moderate pitch,young adult,male,fast,monotone,,GigaSpeech
+AUD0000001101_S0001333,5.279785,AUD0000001101,test,moderate pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000001197_S0000554,9.790039,AUD0000001197,test,slightly high-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000015120_S0000123,5.409973,POD0000015120,test,slightly high-pitch,middle-aged adult,male,slightly slowly,slightly expressive and animated,,GigaSpeech
+YOU0000007792_S0000118,18.47998,YOU0000007792,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000000062_S0004868,10.5,AUD0000000062,test,very low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000001730_S0005922,6.5996094,AUD0000001730,test,slightly low-pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000390_S0009613,6.1015625,AUD0000000390,test,slightly low-pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000001349_S0009648,7.5976562,AUD0000001349,test,low-pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000007782_S0000006,8.669998,YOU0000007782,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000001776_S0005896,6.4003906,AUD0000001776,test,moderate pitch,middle-aged adult,female,fast,monotone,,GigaSpeech
+YOU0000010916_S0000009,8.980003,YOU0000010916,test,slightly high-pitch,elderly,female,slightly fast,monotone,,GigaSpeech
+AUD0000001042_S0000391,6.9300537,AUD0000001042,test,slightly low-pitch,middle-aged adult,male,slightly slowly,very monotone,,GigaSpeech
+YOU0000017968_S0000175,17.890015,YOU0000017968,test,high-pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000000943_S0000310,7.8898926,POD0000000943,test,moderate pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+AUD0000000965_S0001151,10.859863,AUD0000000965,test,moderate pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+YOU0000017473_S0001091,5.580078,YOU0000017473,test,moderate pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000001380_S0005533,6.4003906,AUD0000001380,test,slightly low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000005292_S0000098,5.6400146,YOU0000005292,test,slightly low-pitch,middle-aged adult,male,fast,very monotone,,GigaSpeech
+POD0000000147_S0000070,5.0999756,POD0000000147,test,slightly low-pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000001365_S0003782,7.4003906,AUD0000001365,test,slightly high-pitch,middle-aged adult,male,slightly slowly,slightly expressive and animated,,GigaSpeech
+AUD0000000685_S0000646,5.670166,AUD0000000685,test,low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000001109_S0007285,5.1015625,AUD0000001109,test,slightly low-pitch,middle-aged adult,female,slowly,slightly expressive and animated,,GigaSpeech
+AUD0000001396_S0001619,5.17041,AUD0000001396,test,slightly high-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000008038_S0000031,6.970001,YOU0000008038,test,slightly low-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000005634_S0000207,14.320068,YOU0000005634,test,very high-pitch,child,male,slightly slowly,very expressive and animated,,GigaSpeech
+POD0000009010_S0000052,8.880005,POD0000009010,test,high-pitch,young adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000015162_S0000024,15.920013,POD0000015162,test,high-pitch,elderly,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000001277_S0000102,8.340027,POD0000001277,test,moderate pitch,young adult,male,slightly slowly,monotone,,GigaSpeech
+AUD0000001014_S0001802,5.9697266,AUD0000001014,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000002670_S0000022,6.9900208,YOU0000002670,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000614_S0004810,5.9003906,AUD0000000614,test,very high-pitch,middle-aged adult,male,slightly fast,expressive and animated,,GigaSpeech
+POD0000009184_S0000294,13.409912,POD0000009184,test,moderate pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000002979_S0000081,14.110046,POD0000002979,test,very low-pitch,young adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000016842_S0000054,8.220001,YOU0000016842,test,moderate pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000001478_S0001794,8.560547,AUD0000001478,test,moderate pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+POD0000007909_S0000055,11.019989,POD0000007909,test,slightly high-pitch,young adult,male,slightly slowly,expressive and animated,,GigaSpeech
+AUD0000001146_S0002757,5.7998047,AUD0000001146,test,slightly low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000013903_S0000304,7.0300293,YOU0000013903,test,high-pitch,young adult,female,fast,expressive and animated,,GigaSpeech
+AUD0000001805_S0003473,5.4003906,AUD0000001805,test,slightly high-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000000968_S0001182,5.8007812,AUD0000000968,test,slightly high-pitch,young adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000000183_S0000004,7.620001,YOU0000000183,test,very high-pitch,young adult,male,slightly fast,expressive and animated,,GigaSpeech
+POD0000009092_S0000038,5.51001,POD0000009092,test,slightly low-pitch,young adult,male,fast,very monotone,,GigaSpeech
+AUD0000001542_S0000464,8.340088,AUD0000001542,test,moderate pitch,middle-aged adult,male,moderate speed,expressive and animated,,GigaSpeech
+AUD0000001601_S0006858,13.597656,AUD0000001601,test,moderate pitch,elderly,male,moderate speed,very monotone,,GigaSpeech
+YOU0000004120_S0000048,9.119995,YOU0000004120,test,high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000013924_S0000020,5.2899933,YOU0000013924,test,very high-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000005412_S0003252,5.4003906,YOU0000005412,test,moderate pitch,teenager,female,moderate speed,expressive and animated,,GigaSpeech
+POD0000006647_S0000317,9.459961,POD0000006647,test,moderate pitch,young adult,male,fast,very monotone,,GigaSpeech
+POD0000000878_S0000164,6.789917,POD0000000878,test,slightly low-pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+YOU0000012019_S0000198,7.459961,YOU0000012019,test,slightly low-pitch,elderly,male,moderate speed,monotone,,GigaSpeech
+POD0000009593_S0000155,6.7000732,POD0000009593,test,low-pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000012585_S0000027,10.410004,POD0000012585,test,slightly low-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000071_S0001089,6.419922,AUD0000000071,test,very high-pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000009074_S0000024,7.529999,POD0000009074,test,slightly low-pitch,young adult,male,very fast,very monotone,,GigaSpeech
+POD0000006346_S0000162,6.1799316,POD0000006346,test,very low-pitch,young adult,male,fast,very monotone,,GigaSpeech
+POD0000006290_S0000076,9.570007,POD0000006290,test,slightly high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000006117_S0000079,6.879944,POD0000006117,test,moderate pitch,middle-aged adult,male,fast,slightly expressive and animated,,GigaSpeech
+AUD0000000623_S0007084,7.0,AUD0000000623,test,slightly low-pitch,middle-aged adult,male,very fast,monotone,,GigaSpeech
+AUD0000001080_S0003554,9.5,AUD0000001080,test,slightly high-pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000020892_S0000027,6.630005,YOU0000020892,test,moderate pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000256_S0003315,5.9003906,AUD0000000256,test,slightly high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000001319_S0000375,5.3498535,POD0000001319,test,slightly low-pitch,elderly,female,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000001143_S0004414,6.6992188,AUD0000001143,test,high-pitch,elderly,male,moderate speed,expressive and animated,,GigaSpeech
+YOU0000009004_S0000322,8.769775,YOU0000009004,test,high-pitch,middle-aged adult,male,slightly fast,very expressive and animated,,GigaSpeech
+POD0000005313_S0000482,11.310059,POD0000005313,test,slightly low-pitch,young adult,male,fast,slightly expressive and animated,,GigaSpeech
+POD0000000724_S0000032,16.270004,POD0000000724,test,slightly low-pitch,elderly,female,slightly slowly,slightly expressive and animated,,GigaSpeech
+AUD0000001547_S0003428,10.699219,AUD0000001547,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000000233_S0000135,6.839966,POD0000000233,test,slightly low-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+POD0000000713_S0000064,6.299988,POD0000000713,test,low-pitch,middle-aged adult,female,slowly,monotone,,GigaSpeech
+AUD0000001531_S0000272,7.75,AUD0000001531,test,low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+POD0000015222_S0000156,5.1400146,POD0000015222,test,slightly high-pitch,middle-aged adult,male,fast,slightly expressive and animated,,GigaSpeech
+YOU0000007674_S0000023,6.4800034,YOU0000007674,test,high-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000002810_S0000404,9.27002,YOU0000002810,test,slightly high-pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000014318_S0000144,8.640015,POD0000014318,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000007246_S0001111,5.459961,POD0000007246,test,moderate pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+AUD0000000427_S0001862,5.5,AUD0000000427,test,slightly low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+YOU0000004351_S0000159,11.619995,YOU0000004351,test,very high-pitch,middle-aged adult,male,fast,slightly expressive and animated,,GigaSpeech
+POD0000006102_S0000145,18.01001,POD0000006102,test,moderate pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000000690_S0000110,8.799988,AUD0000000690,test,slightly high-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000006338_S0000240,14.600098,POD0000006338,test,slightly high-pitch,young adult,male,moderate speed,very monotone,,GigaSpeech
+YOU0000014794_S0000242,7.6500244,YOU0000014794,test,high-pitch,elderly,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000009247_S0000022,7.830002,POD0000009247,test,slightly high-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+POD0000006289_S0000061,9.25,POD0000006289,test,very high-pitch,young adult,male,moderate speed,expressive and animated,,GigaSpeech
+YOU0000007966_S0002297,8.5,YOU0000007966,test,very high-pitch,middle-aged adult,female,moderate speed,very expressive and animated,,GigaSpeech
+YOU0000007320_S0000406,15.9001465,YOU0000007320,test,slightly high-pitch,middle-aged adult,female,fast,monotone,,GigaSpeech
+AUD0000001008_S0002110,5.4003906,AUD0000001008,test,very low-pitch,middle-aged adult,male,very fast,monotone,,GigaSpeech
+AUD0000000851_S0001977,5.5996094,AUD0000000851,test,low-pitch,young adult,female,fast,slightly expressive and animated,,GigaSpeech
+AUD0000000787_S0000308,5.1101074,AUD0000000787,test,slightly low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000001678_S0004092,7.0,AUD0000001678,test,moderate pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+AUD0000000546_S0001547,6.7001953,AUD0000000546,test,slightly high-pitch,middle-aged adult,female,slightly fast,expressive and animated,,GigaSpeech
+POD0000005634_S0001679,5.3100586,POD0000005634,test,slightly low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000017028_S0000250,5.5199585,YOU0000017028,test,slightly low-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000035_S0011078,6.0,AUD0000000035,test,low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000009530_S0000047,6.9799805,POD0000009530,test,moderate pitch,teenager,female,very fast,slightly expressive and animated,,GigaSpeech
+AUD0000000630_S0001254,9.700195,AUD0000000630,test,slightly low-pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+AUD0000000389_S0007751,5.3007812,AUD0000000389,test,slightly high-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000001403_S0000098,13.25,POD0000001403,test,moderate pitch,young adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000001163_S0007737,5.3007812,AUD0000001163,test,slightly low-pitch,middle-aged adult,female,fast,slightly expressive and animated,,GigaSpeech
+AUD0000000223_S0000222,5.76001,AUD0000000223,test,slightly low-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000008200_S0000408,7.550049,YOU0000008200,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000006008_S0000197,11.25,POD0000006008,test,moderate pitch,young adult,male,moderate speed,expressive and animated,,GigaSpeech
+AUD0000001048_S0008343,5.3007812,AUD0000001048,test,moderate pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+AUD0000000394_S0000201,5.039978,AUD0000000394,test,slightly high-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000020746_S0000605,6.090088,YOU0000020746,test,moderate pitch,elderly,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000009121_S0000165,7.73999,POD0000009121,test,slightly high-pitch,middle-aged adult,male,slightly slowly,slightly expressive and animated,,GigaSpeech
+AUD0000000518_S0000622,11.77002,AUD0000000518,test,slightly high-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000000920_S0000787,6.120117,AUD0000000920,test,very low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000908_S0006936,5.5,AUD0000000908,test,very low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+YOU0000005157_S0000023,5.7599945,YOU0000005157,test,slightly low-pitch,middle-aged adult,female,fast,monotone,,GigaSpeech
+AUD0000000154_S0002265,12.200195,AUD0000000154,test,slightly high-pitch,middle-aged adult,female,fast,very expressive and animated,,GigaSpeech
+YOU0000020644_S0000099,9.669983,YOU0000020644,test,high-pitch,elderly,male,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000019997_S0000046,5.5400085,YOU0000019997,test,moderate pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000938_S0004002,5.0996094,AUD0000000938,test,low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000005722_S0000210,8.790039,YOU0000005722,test,low-pitch,young adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000016431_S0000043,6.2700043,YOU0000016431,test,moderate pitch,young adult,male,very fast,very monotone,,GigaSpeech
+YOU0000001539_S0000061,6.730011,YOU0000001539,test,low-pitch,middle-aged adult,female,slightly slowly,expressive and animated,,GigaSpeech
+POD0000006086_S0000442,5.5998535,POD0000006086,test,slightly high-pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+AUD0000000014_S0001136,5.909668,AUD0000000014,test,moderate pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000000123_S0000278,7.0200195,AUD0000000123,test,moderate pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+AUD0000000265_S0001389,10.990234,AUD0000000265,test,moderate pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000013362_S0000484,5.1000977,YOU0000013362,test,moderate pitch,young adult,female,fast,slightly expressive and animated,,GigaSpeech
+AUD0000000798_S0013618,9.5,AUD0000000798,test,low-pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+POD0000003662_S0000078,7.4400024,POD0000003662,test,slightly high-pitch,middle-aged adult,male,fast,slightly expressive and animated,,GigaSpeech
+AUD0000001269_S0004393,5.8007812,AUD0000001269,test,low-pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000006170_S0000311,8.949951,YOU0000006170,test,slightly low-pitch,young adult,female,moderate speed,monotone,,GigaSpeech
+AUD0000000198_S0004893,9.902344,AUD0000000198,test,slightly low-pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+POD0000015148_S0000186,6.869995,POD0000015148,test,low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000000712_S0002574,6.7998047,AUD0000000712,test,slightly high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000001254_S0001052,8.189941,AUD0000001254,test,slightly low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+POD0000014329_S0000106,6.1499634,POD0000014329,test,slightly low-pitch,middle-aged adult,male,fast,monotone,,GigaSpeech
+POD0000004259_S0000018,8.949997,POD0000004259,test,moderate pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+AUD0000001166_S0003064,5.5,AUD0000001166,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000015998_S0000049,5.01001,POD0000015998,test,high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+POD0000011376_S0000321,5.880005,POD0000011376,test,slightly low-pitch,young adult,female,moderate speed,monotone,,GigaSpeech
+AUD0000001213_S0021729,5.0,AUD0000001213,test,slightly low-pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000005811_S0000305,6.8099365,POD0000005811,test,low-pitch,young adult,female,slightly slowly,monotone,,GigaSpeech
+YOU0000012064_S0000079,7.799988,YOU0000012064,test,slightly high-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+AUD0000001776_S0006049,5.1992188,AUD0000001776,test,slightly low-pitch,middle-aged adult,female,fast,monotone,,GigaSpeech
+AUD0000001844_S0000886,11.52002,AUD0000001844,test,low-pitch,young adult,female,moderate speed,monotone,,GigaSpeech
+YOU0000002140_S0000081,16.440002,YOU0000002140,test,slightly high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000001746_S0001024,7.169922,YOU0000001746,test,very high-pitch,young adult,female,slightly fast,very expressive and animated,,GigaSpeech
+AUD0000001398_S0009935,7.796875,AUD0000001398,test,slightly low-pitch,elderly,male,slightly fast,monotone,,GigaSpeech
+AUD0000001350_S0001933,11.15918,AUD0000001350,test,low-pitch,middle-aged adult,male,fast,very monotone,,GigaSpeech
+POD0000014622_S0000196,5.800049,POD0000014622,test,low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+YOU0000017473_S0002466,10.400391,YOU0000017473,test,slightly low-pitch,young adult,female,moderate speed,monotone,,GigaSpeech
+AUD0000000773_S0001887,7.5703125,AUD0000000773,test,moderate pitch,young adult,male,slightly fast,very monotone,,GigaSpeech
+POD0000003223_S0000190,8.339966,POD0000003223,test,slightly low-pitch,middle-aged adult,female,moderate speed,monotone,,GigaSpeech
+POD0000004585_S0000064,11.75,POD0000004585,test,moderate pitch,young adult,female,fast,expressive and animated,,GigaSpeech
+POD0000009855_S0000227,9.580078,POD0000009855,test,slightly high-pitch,middle-aged adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000006410_S0000342,6.2800293,POD0000006410,test,slightly high-pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000015875_S0000168,8.640015,YOU0000015875,test,very high-pitch,middle-aged adult,male,slowly,slightly expressive and animated,,GigaSpeech
+AUD0000000518_S0000733,9.209961,AUD0000000518,test,slightly high-pitch,young adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000010912_S0000109,10.590027,YOU0000010912,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+AUD0000001048_S0017204,5.0,AUD0000001048,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000003327_S0000001,7.0499997,YOU0000003327,test,very high-pitch,young adult,male,fast,expressive and animated,,GigaSpeech
+YOU0000009162_S0000193,5.6800537,YOU0000009162,test,very high-pitch,elderly,male,slightly slowly,slightly expressive and animated,,GigaSpeech
+AUD0000000614_S0007668,7.5976562,AUD0000000614,test,slightly high-pitch,young adult,female,fast,monotone,,GigaSpeech
+POD0000009493_S0000267,11.550049,POD0000009493,test,slightly high-pitch,young adult,female,fast,very expressive and animated,,GigaSpeech
+YOU0000016523_S0000328,12.820068,YOU0000016523,test,moderate pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+POD0000004409_S0000008,11.669998,POD0000004409,test,slightly high-pitch,middle-aged adult,female,very fast,expressive and animated,,GigaSpeech
+POD0000007931_S0000232,7.419922,POD0000007931,test,moderate pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000005746_S0001179,6.4101562,POD0000005746,test,low-pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000013255_S0000245,5.4799805,YOU0000013255,test,moderate pitch,middle-aged adult,male,very fast,monotone,,GigaSpeech
+POD0000005471_S0000243,5.880005,POD0000005471,test,slightly high-pitch,elderly,male,slightly fast,monotone,,GigaSpeech
+AUD0000000166_S0001096,12.549805,AUD0000000166,test,moderate pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000016874_S0000009,8.279999,YOU0000016874,test,slightly high-pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000003487_S0000139,5.25,POD0000003487,test,low-pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+YOU0000020661_S0000238,6.3900146,YOU0000020661,test,slightly low-pitch,middle-aged adult,male,moderate speed,monotone,,GigaSpeech
+POD0000011496_S0000175,6.98999,POD0000011496,test,slightly low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+POD0000005279_S0000347,7.169922,POD0000005279,test,very high-pitch,middle-aged adult,male,slightly slowly,very expressive and animated,,GigaSpeech
+POD0000005931_S0000116,5.339966,POD0000005931,test,slightly high-pitch,middle-aged adult,male,slightly fast,expressive and animated,,GigaSpeech
+AUD0000000020_S0005228,5.8984375,AUD0000000020,test,low-pitch,middle-aged adult,male,moderate speed,very monotone,,GigaSpeech
+POD0000005855_S0000984,8.640137,POD0000005855,test,slightly low-pitch,middle-aged adult,male,slightly fast,very monotone,,GigaSpeech
+AUD0000000181_S0003648,5.5996094,AUD0000000181,test,slightly low-pitch,middle-aged adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+YOU0000008373_S0000099,15.809998,YOU0000008373,test,high-pitch,middle-aged adult,male,slightly fast,expressive and animated,,GigaSpeech
+POD0000003720_S0000075,8.040039,POD0000003720,test,high-pitch,young adult,male,slightly fast,slightly expressive and animated,,GigaSpeech
+POD0000009434_S0000161,13.189941,POD0000009434,test,slightly high-pitch,middle-aged adult,male,moderate speed,slightly expressive and animated,,GigaSpeech
+AUD0000001163_S0000125,9.75,AUD0000001163,test,very low-pitch,middle-aged adult,female,slightly fast,slightly expressive and animated,,GigaSpeech
+YOU0000012528_S0000101,6.1799927,YOU0000012528,test,very high-pitch,middle-aged adult,female,fast,slightly expressive and animated,,GigaSpeech
+AUD0000001526_S0002398,6.0,AUD0000001526,test,moderate pitch,middle-aged adult,female,slightly fast,monotone,,GigaSpeech
+POD0000009053_S0000341,7.4401855,POD0000009053,test,high-pitch,young adult,female,moderate speed,slightly expressive and animated,,GigaSpeech
+POD0000000282_S0000129,13.359985,POD0000000282,test,moderate pitch,young adult,male,moderate speed,monotone,,GigaSpeech
+POD0000010741_S0000078,15.719971,POD0000010741,test,moderate pitch,middle-aged adult,male,slightly fast,monotone,,GigaSpeech
+YOU0000005855_S0000127,5.880005,YOU0000005855,test,slightly low-pitch,middle-aged adult,female,slightly slowly,slightly expressive and animated,,GigaSpeech
+POD0000005713_S0000973,12.240234,POD0000005713,test,slightly low-pitch,young adult,female,slightly fast,expressive and animated,,GigaSpeech
+AUD0000000366_S0001579,10.389648,AUD0000000366,test,slightly low-pitch,middle-aged adult,male,slightly slowly,monotone,,GigaSpeech
+POD0000005366_S0000066,12.100037,POD0000005366,test,slightly high-pitch,middle-aged adult,female,moderate speed,expressive and animated,,GigaSpeech
