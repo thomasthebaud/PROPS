@@ -1,0 +1,12 @@
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Dataset & \multicolumn{2}{c}{train} & \multicolumn{2}{c}{dev} & \multicolumn{2}{c}{test} & \multicolumn{2}{c}{total} \\
+Name & hours & segments & hours & segments & hours & segments & hours & segments \\
+\midrule
+CommonVoice & 680.51 & 373,779 & 1.57 & 800 & 1.38 & 721 & 683.45 & 375,300 \\
+GigaSpeech & 3,414.00 & 1,477,460 & 0.00 & 0 & 1.38 & 609 & 3,415.38 & 1,478,069 \\
+MLS-en & 0.00 & 0 & 0.00 & 0 & 0.00 & 0 & 0.00 & 0 \\
+Emilia-en & 771.77 & 294,023 & 43.30 & 16,429 & 43.29 & 16,500 & 858.35 & 326,952 \\
+TOTAL & 4,866.28 & 2,145,262 & 44.87 & 17,229 & 46.05 & 17,830 & 4,957.19 & 2,180,321 \\
+\bottomrule
+\end{tabular}

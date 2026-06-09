@@ -1,48 +1,105 @@
-import os
+#!/usr/bin/env python3
+"""Prepare CapSpeech-GigaSpeech metadata in the unified PROPS CSV format."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
 import pandas as pd
 from tqdm import tqdm
-import mutagen
+from pandas.errors import EmptyDataError
 
-dataset, path, ref = 'GigaSpeech','/export/corpora7/CapSpeech-GigaSpeech/', 'gigaspeech'
+BASE_FIELDS = ["id", "duration", "speaker", "split", "storage_path", "sample_freq"]
+OPTIONAL_FIELDS = ["pitch", "age", "gender", "speaking_rate", "speech_monotony", "accent", "capspeech_prompt"]
+DEFAULT_METADATA_ROOT = Path("/export/fs05/corpora7/capspeechset")
+DEFAULT_AUDIO_ROOT = Path("/export/fs05/corpora7/CapSpeech-GigaSpeech")
 
-print(f"Doing {dataset}")
-dfs = []
-for split in ['test', 'train', 'validation']:
-    output_dir = f"data/{dataset}_{split}"
 
-    df = pd.read_csv(f"/export/corpora7/capspeechset/{split}_PT_{ref}_caption.csv")
-    metadata = pd.read_csv(f"/export/corpora7/capspeechset/{split}_{ref}.csv")
-    
-    print(split, df.shape, metadata.shape)
-    df = pd.merge(df, metadata, on='audio_path', suffixes=('', '_y'))
-    print("after merge:", df.shape)
-    print(df.columns.tolist())
-    df['split'] = split
-    
-    os.makedirs(output_dir, exist_ok=True)
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Create data/<dataset_name>/{train,dev,test}.csv for CapSpeech-GigaSpeech.")
+    parser.add_argument("dataset_name", nargs="?", default="GigaSpeech")
+    parser.add_argument("--metadata-root", type=Path, default=DEFAULT_METADATA_ROOT)
+    parser.add_argument("--audio-root", type=Path, default=DEFAULT_AUDIO_ROOT)
+    parser.add_argument("--output-root", type=Path, default=Path("data"))
+    parser.add_argument("--skip-missing-audio", action="store_true")
+    return parser.parse_args()
 
-    df['duration'] = df['speech_duration']
-    df['storage_path'] = [path+a for a in df['audio_path']]
-    df['sample_freq'] = 16000
-    df['id'] = [p.split('/')[-1][:-4] for p in df['storage_path']]
-    df['speaker'] = [p.split('_')[0] for p in df['id']]
 
-    to_rem = [] #'/export/corpora7/CapSpeech-GigaSpeech/gigaspeech/YOU1000000117_S0000062.wav'
-    for f in tqdm(list(df['storage_path']), desc='removing missing files'):
-        if not os.path.exists(f): to_rem.append(f)
-    print(f"{len(to_rem)} files to remove.")
-    df = df[~df['storage_path'].isin(to_rem)]
-    print('new shape :',df.shape)
+def source_split(split: str) -> str:
+    return "validation" if split == "dev" else split
 
-    segments = df[['id', 'duration', 'speaker', 'split', 'pitch','age','gender', 'speaking_rate', 'speech_monotony', 'accent']]
-    recordings = df[['id', 'duration', 'storage_path', 'sample_freq']]
 
-    segments['corpusid'] = dataset
-    # segments['speaker'] = [f"{dataset}_{i}" for i in range(len(segments))]
-    print(f"{dataset}: recordings {recordings.shape}, segments {segments.shape}")
-    segments.to_csv(f"{output_dir}/segments.csv", index=False)
-    recordings.to_csv(f"{output_dir}/recordings.csv", index=False)
-    print("Recordings:")
-    print(recordings.head())
-    print("Segments:")
-    print(segments.head())
+def safe_id(audio_path: object) -> str:
+    return Path(str(audio_path)).stem
+
+
+def speaker_from_id(segment_id: str) -> str:
+    return segment_id.split("_")[0]
+
+
+def read_csv_or_empty(path: Path, split: str, role: str) -> pd.DataFrame:
+    if not path.exists():
+        print(f"WARNING: missing {path}; treating {split} {role} metadata as empty", flush=True)
+        return pd.DataFrame()
+    if path.stat().st_size == 0:
+        print(f"WARNING: empty {path}; treating {split} {role} metadata as empty", flush=True)
+        return pd.DataFrame()
+    try:
+        return pd.read_csv(path)
+    except EmptyDataError:
+        print(f"WARNING: no columns in {path}; treating {split} {role} metadata as empty", flush=True)
+        return pd.DataFrame()
+
+
+def read_split(args: argparse.Namespace, split: str) -> pd.DataFrame:
+    source = source_split(split)
+    caption_path = args.metadata_root / f"{source}_PT_gigaspeech_caption.csv"
+    metadata_path = args.metadata_root / f"{source}_gigaspeech.csv"
+    caption_df = read_csv_or_empty(caption_path, split, "caption")
+    if caption_df.empty:
+        return caption_df
+    metadata_df = read_csv_or_empty(metadata_path, split, "profile")
+    if metadata_df.empty:
+        print(f"WARNING: using caption metadata only for {split}", flush=True)
+        df = caption_df
+    else:
+        df = pd.merge(caption_df, metadata_df, on="audio_path", suffixes=("", "_metadata"), how="left")
+    if df.empty:
+        return df
+    df["split"] = split
+    df["duration"] = df.get("speech_duration")
+    df["storage_path"] = df["audio_path"].map(lambda value: str(args.audio_root / str(value)))
+    df["sample_freq"] = 16000
+    df["id"] = df["audio_path"].map(safe_id)
+    df["speaker"] = df["id"].map(speaker_from_id)
+    if "caption" in df.columns:
+        df["capspeech_prompt"] = df["caption"]
+    if args.skip_missing_audio:
+        exists_mask = df["storage_path"].map(lambda value: Path(value).exists())
+        print(f"{split}: removed {int((~exists_mask).sum())} rows with missing audio", flush=True)
+        df = df.loc[exists_mask].copy()
+    return df
+
+
+def write_split(df: pd.DataFrame, output_dir: Path, split: str) -> None:
+    output_path = output_dir / f"{split}.csv"
+    columns = BASE_FIELDS + [field for field in OPTIONAL_FIELDS if field in df.columns]
+    if df.empty:
+        pd.DataFrame(columns=BASE_FIELDS).to_csv(output_path, index=False)
+    else:
+        df[columns].to_csv(output_path, index=False)
+    print(f"Wrote {len(df)} rows to {output_path}", flush=True)
+
+
+def main() -> int:
+    args = parse_args()
+    output_dir = args.output_root / args.dataset_name
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for split in tqdm(["train", "dev", "test"], desc="Preparing GigaSpeech metadata", unit="split"):
+        write_split(read_split(args, split), output_dir, split)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
