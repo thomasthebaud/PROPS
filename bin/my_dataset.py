@@ -1,17 +1,62 @@
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 import torch
 import pandas as pd
 import numpy as np
 import random
 import os
+import re
 from tqdm.auto import tqdm
 
 
 SBERT_EMBEDDING_CACHE = {}
 XVECTOR_CACHE = {}
 
+def safe_name(value):
+    return re.sub(r"[^A-Za-z0-9._-]+", "_", str(value)).strip("_") or "model"
+
+
 class XVectorDataset(torch.utils.data.Dataset):
+    @staticmethod
+    def resolve_csv_path(value):
+        path = Path(str(value))
+        if path.suffix == '.csv' or path.exists():
+            return path
+        if '_' in str(value):
+            dataset, split = str(value).rsplit('_', 1)
+            split_path = Path('data') / dataset / f'{split}.csv'
+            if split_path.exists():
+                return split_path
+        legacy_path = Path('data') / str(value) / 'segments.csv'
+        if legacy_path.exists():
+            return legacy_path
+        return Path('data') / str(value)
+
+    @staticmethod
+    def xvector_dataset_name(df, csv_path):
+        if 'dataset' in df.columns and 'split' in df.columns:
+            dataset = str(df['dataset'].dropna().iloc[0]).strip() if not df['dataset'].dropna().empty else ''
+            split = str(df['split'].dropna().iloc[0]).strip() if not df['split'].dropna().empty else ''
+            if dataset and split:
+                return f'{dataset}_{split}'
+        if csv_path.name in {'train.csv', 'dev.csv', 'test.csv'}:
+            return f'{csv_path.parent.name}_{csv_path.stem}'
+        return csv_path.parent.name
+
+    @staticmethod
+    def add_xvector_dataset_column(df, fallback_dataset):
+        if 'dataset' not in df.columns or 'split' not in df.columns:
+            df['set'] = fallback_dataset
+            return df
+
+        dataset = df['dataset'].fillna('').astype(str).str.strip()
+        split = df['split'].fillna('').astype(str).str.strip()
+        row_dataset = dataset + '_' + split
+        df['set'] = row_dataset.where(dataset.ne('') & split.ne(''), fallback_dataset)
+        return df
+
     def __init__(
         self,
         csv_paths,
@@ -22,30 +67,38 @@ class XVectorDataset(torch.utils.data.Dataset):
         preload_embeddings=False,
         preload_xvectors=True,
         xvector_preload_workers=16,
+        sbert_root='exp/SBERT_embs/Capspeech',
     ):
         self.prop_dropout = prop_dropout
+        self.sbert_root = sbert_root
         self.fields = ['pitch', 'age', 'gender', 'speaking_rate', 'speech_monotony', 'accent']
         dfs=[]
         dataset_fractions = dataset_fractions or {}
         for dataset in csv_paths:
-            df = pd.read_csv(f'data/{dataset}/segments.csv')
-            fraction = dataset_fractions.get(dataset, 1.0)
+            csv_path = self.resolve_csv_path(dataset)
+            df = pd.read_csv(csv_path)
+            dataset_key = self.xvector_dataset_name(df, csv_path)
+            fraction = dataset_fractions.get(str(dataset), dataset_fractions.get(dataset_key, 1.0))
             if fraction < 1.0:
                 original_len = len(df)
                 sample_size = max(1, int(round(original_len * fraction)))
                 df = df.sample(n=sample_size, random_state=seed).sort_index()
                 print(
                     f"Using {len(df)}/{original_len} utterances "
-                    f"({fraction:.1%}) from {dataset}.",
+                    f"({fraction:.1%}) from {csv_path}.",
                     flush=True,
                 )
-            df['set'] = dataset
+            df = self.add_xvector_dataset_column(df, dataset_key)
             dfs.append(df)
         self.utterances = pd.concat(dfs)
+        if 'storage_path' not in self.utterances.columns:
+            self.utterances['storage_path'] = ''
+        if 'speaker' not in self.utterances.columns:
+            self.utterances['speaker'] = 'unknown'
         for field in self.fields:
             if field not in self.utterances.columns:
                 self.utterances[field]='unknown'
-        self.utterances = self.utterances[['id', 'speaker', 'set']+self.fields]
+        self.utterances = self.utterances[['id', 'speaker', 'set', 'storage_path']+self.fields]
         self.utterances = self.utterances.fillna('unknown')
         self.utterances = self.utterances.reset_index(drop=True)
         print(f"Loaded {len(self.utterances)} utterances.")
@@ -56,6 +109,8 @@ class XVectorDataset(torch.utils.data.Dataset):
         self.profile_lookup = self.build_profile_lookup()
         self.sbert_embeddings = {}
         self.xvectors = {}
+        self.missing_xvector_counts = Counter()
+        self.xvectors_preloaded = False
         self.length = len(self.utterances)
         if preload_xvectors:
             self.preload_xvectors(num_workers=xvector_preload_workers)
@@ -89,12 +144,38 @@ class XVectorDataset(torch.utils.data.Dataset):
             lookup.setdefault(key, []).append(index)
         return lookup
 
-    def load_xvector(self, id, dataset):
+    def candidate_xvector_paths(self, id, dataset, storage_path=''):
+        xvector_dir = Path('exp/xvectors/ecapa_tdnn') / str(dataset) / 'xvectors'
+        candidates = [
+            xvector_dir / f'{safe_name(id)}.npz',
+            xvector_dir / f'{id}.npz',
+        ]
+        storage_path = str(storage_path).strip()
+        if storage_path and storage_path != 'unknown':
+            candidates.append(xvector_dir / f'{safe_name(Path(storage_path).stem)}.npz')
+        deduped = []
+        seen = set()
+        for candidate in candidates:
+            if candidate not in seen:
+                deduped.append(candidate)
+                seen.add(candidate)
+        return deduped
+
+    def load_xvector(self, id, dataset, storage_path=''):
         # dim 192
-        xvector_path = f'exp/xvectors/ecapa_tdnn/{dataset}/xvectors/{id}.npz'
+        candidates = self.candidate_xvector_paths(id, dataset, storage_path)
+        xvector_path = next((path for path in candidates if path.exists()), candidates[0])
+        xvector_path = str(xvector_path)
         if xvector_path in XVECTOR_CACHE:
             return XVECTOR_CACHE[xvector_path]
-        with np.load(xvector_path) as data:
+        try:
+            data_file = np.load(xvector_path)
+        except FileNotFoundError as exc:
+            candidate_text = ', '.join(str(path) for path in candidates)
+            raise FileNotFoundError(
+                f"Missing xvector for id={id!r}, dataset={dataset!r}. Tried: {candidate_text}"
+            ) from exc
+        with data_file as data:
             xvector = np.asarray(data['xvector'], dtype=np.float32)
         norm = np.linalg.norm(xvector)
         if norm > 0:
@@ -103,11 +184,14 @@ class XVectorDataset(torch.utils.data.Dataset):
         return XVECTOR_CACHE[xvector_path]
 
     def preload_xvectors(self, num_workers=16):
-        rows = list(self.utterances[['id', 'set']].itertuples(index=True, name=None))
+        rows = list(self.utterances[['id', 'set', 'storage_path']].itertuples(index=True, name=None))
 
         def load_one(row):
-            idx, utterance_id, dataset = row
-            return idx, self.load_xvector(utterance_id, dataset)
+            idx, utterance_id, dataset, storage_path = row
+            try:
+                return idx, dataset, self.load_xvector(utterance_id, dataset, storage_path)
+            except FileNotFoundError:
+                return idx, dataset, None
 
         if num_workers <= 1:
             iterator = map(load_one, rows)
@@ -116,16 +200,29 @@ class XVectorDataset(torch.utils.data.Dataset):
             iterator = executor.map(load_one, rows)
 
         try:
-            for idx, xvector in tqdm(
+            for idx, dataset, xvector in tqdm(
                 iterator,
                 total=len(rows),
                 desc=f"Loading x-vectors ({max(1, num_workers)} threads)",
                 unit="xvec",
             ):
+                if xvector is None:
+                    self.missing_xvector_counts[dataset] += 1
+                    continue
                 self.xvectors[idx] = xvector
         finally:
             if num_workers > 1:
                 executor.shutdown(wait=True)
+        self.xvectors_preloaded = True
+        self.print_missing_xvector_summary()
+
+    def print_missing_xvector_summary(self):
+        if not self.missing_xvector_counts:
+            print("Missing xvectors by dataset: none", flush=True)
+            return
+        print("Missing xvectors by dataset:", flush=True)
+        for dataset, count in sorted(self.missing_xvector_counts.items()):
+            print(f"  {dataset}: {count}", flush=True)
 
     def find_description(self, profile):
         matching_indices = self.profile_lookup.get(self.profile_key(profile), [])
@@ -139,7 +236,7 @@ class XVectorDataset(torch.utils.data.Dataset):
 
     def load_sbert_emb(self, desc_num, index):
         # dim 384
-        sbert_path = f'exp/SBERT_embs/{index}/desc{desc_num}.npz'
+        sbert_path = f'{self.sbert_root}/{index}/desc{desc_num}.npz'
         if sbert_path in SBERT_EMBEDDING_CACHE:
             return SBERT_EMBEDDING_CACHE[sbert_path]
         if not os.path.exists(sbert_path):
@@ -168,7 +265,7 @@ class XVectorDataset(torch.utils.data.Dataset):
         # get x-vector
         xvector = self.xvectors.get(idx)
         if xvector is None:
-            xvector = self.load_xvector(utterance['id'], utterance['set'])
+            xvector = self.load_xvector(utterance['id'], utterance['set'], utterance.get('storage_path', ''))
         # select a profile (by dropping at random some properties)
         selected_profile = self.select_profile(properties)
         # get description
@@ -178,7 +275,7 @@ class XVectorDataset(torch.utils.data.Dataset):
         if embedding is None:
             embedding = self.load_sbert_emb(desc_num, index)
 
-        return xvector, embedding
+        return xvector, embedding, torch.tensor(index, dtype=torch.long)
 
 
 class ProfileDataset(XVectorDataset):
@@ -192,6 +289,7 @@ class ProfileDataset(XVectorDataset):
         preload_embeddings=False,
         preload_xvectors=True,
         xvector_preload_workers=16,
+        sbert_root='exp/SBERT_embs/Capspeech',
     ):
         super().__init__(
             csv_paths=csv_paths,
@@ -202,6 +300,7 @@ class ProfileDataset(XVectorDataset):
             preload_embeddings=preload_embeddings,
             preload_xvectors=preload_xvectors,
             xvector_preload_workers=xvector_preload_workers,
+            sbert_root=sbert_root,
         )
         self.profile_utterance_lookup = self.build_profile_utterance_lookup()
         self.available_profile_indices = [
@@ -232,6 +331,8 @@ class ProfileDataset(XVectorDataset):
     def build_utterance_key_lookup(self):
         lookup = {}
         for utterance_index, utterance in self.utterances.iterrows():
+            if self.xvectors_preloaded and utterance_index not in self.xvectors:
+                continue
             lookup.setdefault(self.utterance_key(utterance), []).append(utterance_index)
         return lookup
 
@@ -268,17 +369,17 @@ class ProfileDataset(XVectorDataset):
 
         xvector = self.xvectors.get(utterance_idx)
         if xvector is None:
-            xvector = self.load_xvector(utterance['id'], utterance['set'])
+            xvector = self.load_xvector(utterance['id'], utterance['set'], utterance.get('storage_path', ''))
 
         embedding = self.sbert_embeddings.get((profile_index, desc_num))
         if embedding is None:
             embedding = self.load_sbert_emb(desc_num, profile_index)
 
-        return xvector, embedding
+        return xvector, embedding, torch.tensor(profile_index, dtype=torch.long)
 
 if __name__=='__main__':
     mydataset = ProfileDataset(["CommonVoice_test", "GigaSpeech_test"], 'data/profile_prompts.csv')
     for data in mydataset:
-        xv, emb = data
+        xv, emb, _profile_index = data
         print(xv.shape, emb.shape)
         break

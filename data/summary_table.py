@@ -10,28 +10,25 @@ import pandas as pd
 from pandas.errors import EmptyDataError
 
 SPLITS = ["train", "dev", "test"]
-DEFAULT_DATASETS = ["CommonVoice", "GigaSpeech", "MLS-en", "Emilia-en", "Capspeech"]
+DEFAULT_DATASETS = ["CommonVoice", "GigaSpeech", "MLS-en", "Emilia-en"]
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Print segment/hour summary tables for generated metadata CSVs.")
     parser.add_argument("--data-root", type=Path, default=Path("data"))
-    parser.add_argument("--datasets", nargs="*", default=None, help="Dataset directories to summarize. Defaults to known generated datasets plus any directory with split CSVs.")
-    parser.add_argument("--latex-output", type=Path, default=Path("data/latex_table.txt"))
+    parser.add_argument("--datasets", nargs="*", default=None, help="Dataset directories to summarize. Defaults to CommonVoice, GigaSpeech, MLS-en, and Emilia-en.")
+    parser.add_argument("--latex-output", type=Path, default=Path("exp/tables/datasets_table.txt"))
     return parser.parse_args()
 
 
 def discover_datasets(data_root: Path, requested: list[str] | None) -> list[str]:
     if requested:
         return requested
-    discovered = {
-        path.name
-        for path in data_root.iterdir()
-        if path.is_dir() and any((path / f"{split}.csv").exists() for split in SPLITS)
-    }
-    ordered = [name for name in DEFAULT_DATASETS if name in discovered]
-    ordered.extend(sorted(discovered - set(ordered)))
-    return ordered
+    return [
+        dataset
+        for dataset in DEFAULT_DATASETS
+        if any((data_root / dataset / f"{split}.csv").exists() for split in SPLITS)
+    ]
 
 
 def read_split(path: Path) -> tuple[int, float]:

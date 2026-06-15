@@ -66,7 +66,7 @@ def parse_args() -> argparse.Namespace:
         "--profile-combinations-csv",
         type=Path,
         default=None,
-        help="Deprecated no-op; inference now uses every row in --profile-csv-path.",
+        help="Only run inference for profiles present in this combinations CSV. Defaults to data/<dataset-name>/profile_combinations.csv.",
     )
     parser.add_argument(
         "--sbert-root",
@@ -102,11 +102,20 @@ def parse_args() -> argparse.Namespace:
 
 
 def resolve_profile_paths(args: argparse.Namespace) -> None:
-    if args.dataset_name is None and (args.profile_csv_path is None or args.sbert_root is None):
-        raise ValueError("Pass --dataset-name, or pass --profile-csv-path and --sbert-root explicitly")
+    if args.dataset_name is None and (
+        args.profile_csv_path is None
+        or args.profile_combinations_csv is None
+        or args.sbert_root is None
+    ):
+        raise ValueError(
+            "Pass --dataset-name, or pass --profile-csv-path, "
+            "--profile-combinations-csv, and --sbert-root explicitly"
+        )
 
     if args.profile_csv_path is None:
         args.profile_csv_path = Path("data") / args.dataset_name / "profile_prompts.csv"
+    if args.profile_combinations_csv is None:
+        args.profile_combinations_csv = Path("data") / args.dataset_name / "profile_combinations.csv"
     if args.sbert_root is None:
         args.sbert_root = Path("exp/SBERT_embs") / args.dataset_name
 
@@ -179,23 +188,19 @@ def normalize_value(value: Any) -> str:
     return text if text else "unknown"
 
 
-def safe_file_value(value: Any) -> str:
-    text = normalize_value(value).lower()
-    safe_chars = [char if char.isalnum() else "_" for char in text]
-    safe = "_".join("".join(safe_chars).split("_"))
-    return safe or "unknown"
+def profile_key(row: pd.Series, fields: list[str]) -> tuple[str, ...]:
+    return tuple(normalize_value(row[field]) for field in fields)
 
 
-def profile_file_stem(profile_index: int, profile: pd.Series, fields: list[str], desc_column: str) -> str:
-    parts = [f"profile_{profile_index}", desc_column]
-    parts.extend(
-        f"{field}_{safe_file_value(profile[field])}"
-        for field in fields
-        if normalize_value(profile[field]).lower() != "unknown"
-    )
-    if len(parts) == 2:
-        parts.append("all_unknown")
-    return "__".join(parts) + "_gmm"
+def load_profile_combinations(path: Path) -> tuple[pd.DataFrame, list[str], set[tuple[str, ...]]]:
+    combinations = pd.read_csv(path).fillna("unknown")
+    combination_fields = [column for column in combinations.columns if column in FIELDS]
+    if not combination_fields:
+        raise ValueError(f"{path} must contain at least one profile field from {FIELDS}")
+    for field in combination_fields:
+        combinations[field] = combinations[field].map(normalize_value)
+    allowed_keys = {profile_key(row, combination_fields) for _, row in combinations.iterrows()}
+    return combinations, combination_fields, allowed_keys
 
 
 def load_profiles(profile_csv_path: Path, profile_text_column: str) -> pd.DataFrame:
@@ -209,6 +214,22 @@ def load_profiles(profile_csv_path: Path, profile_text_column: str) -> pd.DataFr
     return profiles
 
 
+def filter_profiles_to_combinations(
+    profiles: pd.DataFrame,
+    combination_fields: list[str],
+    allowed_keys: set[tuple[str, ...]],
+) -> pd.DataFrame:
+    missing = [field for field in combination_fields if field not in profiles.columns]
+    if missing:
+        raise ValueError(f"profile CSV is missing combination fields: {missing}")
+
+    mask = profiles.apply(lambda row: profile_key(row, combination_fields) in allowed_keys, axis=1)
+    for field in FIELDS:
+        if field not in combination_fields:
+            mask &= profiles[field].map(normalize_value).str.lower() == "unknown"
+    return profiles.loc[mask]
+
+
 def sbert_path(root: Path, profile_index: int, profile_text_column: str) -> Path:
     return root / str(profile_index) / f"{profile_text_column}.npz"
 
@@ -218,8 +239,8 @@ def load_sbert_embedding(path: Path) -> np.ndarray:
         return np.asarray(data["embedding"], dtype=np.float32)
 
 
-def generated_profile_path(output_dir: Path, gmm_id: str) -> Path:
-    return output_dir / "profiles" / f"{gmm_id}.npz"
+def generated_profile_path(output_dir: Path, profile_index: int, desc_column: str) -> Path:
+    return output_dir / "profiles" / f"profile_{profile_index}_{desc_column}_gmm.npz"
 
 
 def save_gmm_npz(
@@ -292,6 +313,8 @@ def main() -> int:
 
     desc_column = args.test_on_profile
     profiles = load_profiles(args.profile_csv_path, desc_column)
+    combinations, combination_fields, allowed_keys = load_profile_combinations(args.profile_combinations_csv)
+    profiles = filter_profiles_to_combinations(profiles, combination_fields, allowed_keys)
     if args.limit is not None:
         profiles = profiles.head(args.limit)
     desc_num = int(desc_column.removeprefix("desc")) if desc_column in DESC_COLUMNS else None
@@ -300,7 +323,9 @@ def main() -> int:
 
     print(f"Loaded checkpoint {checkpoint_path}", flush=True)
     print(f"Checkpoint epoch={checkpoint.get('epoch')} dev_loss={checkpoint.get('dev_loss')}", flush=True)
-    print(f"Loaded {len(profiles)} profiles from {args.profile_csv_path}", flush=True)
+    print(f"Loaded {len(combinations)} profile combinations from {args.profile_combinations_csv}", flush=True)
+    print(f"Filtering inference profiles on fields={combination_fields}", flush=True)
+    print(f"Loaded {len(profiles)} matching profiles from {args.profile_csv_path}", flush=True)
     print(f"Using profile description column {desc_column}", flush=True)
     print(f"Generating one GMM per profile into {args.output_dir}", flush=True)
     missing_embs=0
@@ -315,8 +340,8 @@ def main() -> int:
         embedding = load_sbert_embedding(emb_path)
         properties = {field: str(profile_row[field]) for field in FIELDS}
         description = str(profile_row[desc_column])
-        gmm_id = profile_file_stem(profile_index, profile_row, FIELDS, desc_column)
-        generated_path = generated_profile_path(args.output_dir, gmm_id)
+        generated_path = generated_profile_path(args.output_dir, profile_index, desc_column)
+        gmm_id = f"profile_{profile_index}_{desc_column}_gmm"
         metadata = {
             "gmm_id": gmm_id,
             "profile_index": profile_index,

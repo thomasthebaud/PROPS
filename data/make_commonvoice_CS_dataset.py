@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare CapSpeech MLS-en metadata in the unified PROPS CSV format."""
+"""Prepare CapSpeech CommonVoice metadata in the unified PROPS CSV format."""
 
 from __future__ import annotations
 
@@ -15,17 +15,17 @@ from tqdm import tqdm
 BASE_FIELDS = ["id", "duration", "speaker", "split", "storage_path", "sample_freq"]
 OPTIONAL_FIELDS = ["pitch", "age", "gender", "speaking_rate", "speech_monotony", "accent", "capspeech_prompt"]
 DEFAULT_METADATA_ROOT = Path("/export/fs05/corpora7/capspeechset/capspeechset1")
-DEFAULT_AUDIO_ROOT = Path("/export/fs05/corpora7/CapSpeech-MLS")
+DEFAULT_AUDIO_ROOT = Path("/export/fs05/corpora7/CapSpeech-CommonVoice")
 SPLIT_DIRS = {"train": "train", "dev": "val", "test": "test"}
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Create data/<dataset_name>/{train,dev,test}.csv for CapSpeech MLS-en.")
-    parser.add_argument("dataset_name", nargs="?", default="MLS-en")
+    parser = argparse.ArgumentParser(description="Create data/<dataset_name>/{train,dev,test}.csv for CapSpeech CommonVoice.")
+    parser.add_argument("dataset_name", nargs="?", default="CommonVoice")
     parser.add_argument("--metadata-root", type=Path, default=DEFAULT_METADATA_ROOT)
     parser.add_argument("--audio-root", type=Path, default=DEFAULT_AUDIO_ROOT)
     parser.add_argument("--output-root", type=Path, default=Path("data"))
-    parser.add_argument("--num-workers", type=int, default=16, help="Number of threads used for MLS row conversion.")
+    parser.add_argument("--num-workers", type=int, default=16, help="Number of threads used for CommonVoice row conversion.")
     parser.add_argument("--skip-missing-audio", action="store_true")
     return parser.parse_args()
 
@@ -34,7 +34,7 @@ def load_dataset(path: Path):
     try:
         from datasets import load_from_disk
     except ImportError as exc:
-        raise SystemExit("MLS-en metadata is stored as HuggingFace Arrow data. Activate the conda env or install `datasets`.") from exc
+        raise SystemExit("CommonVoice metadata is stored as HuggingFace Arrow data. Activate the conda env or install `datasets`.") from exc
     return load_from_disk(str(path))
 
 
@@ -55,8 +55,8 @@ def safe_id(audio_path: object) -> str:
 
 def speaker_from_path(audio_path: object) -> str:
     parts = Path(clean_audio_path(audio_path)).parts
-    if len(parts) >= 3:
-        return parts[-3]
+    if len(parts) >= 2:
+        return parts[-2]
     return safe_id(audio_path).split("_")[0]
 
 
@@ -91,11 +91,11 @@ def should_keep_record(record: dict[str, object], skip_missing_audio: bool) -> b
 def records_for_split(args: argparse.Namespace, split: str) -> Iterable[dict[str, object]]:
     dataset_path = args.metadata_root / SPLIT_DIRS[split]
     dataset = load_dataset(dataset_path)
-    desc = f"Preparing MLS-en {split}"
+    desc = f"Preparing CommonVoice {split}"
     num_workers = max(1, args.num_workers)
 
-    def convert_if_mls(row: dict) -> dict[str, object] | None:
-        if row.get("source") != "mls":
+    def convert_if_commonvoice(row: dict) -> dict[str, object] | None:
+        if row.get("source") != "commonvoice":
             return None
         record = row_to_record(row, split, args.audio_root)
         if not should_keep_record(record, args.skip_missing_audio):
@@ -104,7 +104,7 @@ def records_for_split(args: argparse.Namespace, split: str) -> Iterable[dict[str
 
     if num_workers == 1:
         for row in tqdm(dataset, total=len(dataset), desc=desc, unit="row"):
-            record = convert_if_mls(row)
+            record = convert_if_commonvoice(row)
             if record is not None:
                 yield record
         return
@@ -116,7 +116,7 @@ def records_for_split(args: argparse.Namespace, split: str) -> Iterable[dict[str
     with ThreadPoolExecutor(max_workers=num_workers) as executor:
         for _ in range(max_pending):
             try:
-                pending.add(executor.submit(convert_if_mls, next(rows)))
+                pending.add(executor.submit(convert_if_commonvoice, next(rows)))
             except StopIteration:
                 break
 
@@ -129,7 +129,7 @@ def records_for_split(args: argparse.Namespace, split: str) -> Iterable[dict[str
                     if record is not None:
                         yield record
                     try:
-                        pending.add(executor.submit(convert_if_mls, next(rows)))
+                        pending.add(executor.submit(convert_if_commonvoice, next(rows)))
                     except StopIteration:
                         pass
 
@@ -150,7 +150,7 @@ def main() -> int:
     args = parse_args()
     output_dir = args.output_root / args.dataset_name
     output_dir.mkdir(parents=True, exist_ok=True)
-    for split in tqdm(["train", "dev", "test"], desc="Writing MLS-en splits", unit="split"):
+    for split in tqdm(["train", "dev", "test"], desc="Writing CommonVoice splits", unit="split"):
         write_split(args, split, output_dir)
     return 0
 

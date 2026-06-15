@@ -7,6 +7,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+PROFILE_FIELDS = ["pitch", "age", "gender", "speaking_rate", "speech_monotony", "accent"]
+UNKNOWN_VALUES = {"", "nan", "none", "unknown", "not_computed"}
+
+
 
 
 class GaussianMDN(nn.Module):
@@ -251,7 +255,7 @@ class ComposedGMM_MDN(GaussianMDN):
         trainable_mu_sigma=False
     ):
         super().__init__()
-        mu_init, sigma_init = self.load_gmm_initializers(gmm_init_path, output_dim, min_sigma)
+        mu_init, sigma_init, pi_init, component_profile_keys = self.load_gmm_initializers(gmm_init_path, output_dim, min_sigma)
         effective_num_components = int(mu_init.shape[0])
 
         self.pi_threshold = 0.1 / effective_num_components
@@ -277,9 +281,11 @@ class ComposedGMM_MDN(GaussianMDN):
         self.backbone = nn.Sequential(*layers)
         self.pi_head = nn.Linear(prev_dim, self.K)
         nn.init.zeros_(self.pi_head.weight)
-        nn.init.zeros_(self.pi_head.bias)
+        with torch.no_grad():
+            self.pi_head.bias.copy_(torch.log(torch.clamp(pi_init, min=1e-12)))
         self.mu = nn.Parameter(mu_init, requires_grad=trainable_mu_sigma)
         self.raw_sigma = nn.Parameter(self.inverse_softplus(sigma_init - min_sigma), requires_grad=trainable_mu_sigma)
+        self.component_profile_keys = component_profile_keys
         
 
         if num_components != self.K:
@@ -295,13 +301,22 @@ class ComposedGMM_MDN(GaussianMDN):
         return x + torch.log(-torch.expm1(-x))
 
     @staticmethod
-    def gmm_files_from_path(gmm_init_path: str | Path | None) -> list[Path]:
+    def normalize_profile_value(value) -> str:
+        text = str(value).strip() if value is not None else "unknown"
+        return "unknown" if text.lower() in UNKNOWN_VALUES else text
+
+    @classmethod
+    def metadata_profile_key(cls, row: dict[str, str]) -> tuple[str, ...]:
+        return tuple(cls.normalize_profile_value(row.get(field, "unknown")) for field in PROFILE_FIELDS)
+
+    @staticmethod
+    def gmm_files_from_path(gmm_init_path: str | Path | None) -> list[tuple[Path, float, tuple[str, ...] | None]]:
         if gmm_init_path is None:
             raise ValueError("ComposedGMM_MDN requires gmm_init_path")
 
         path = Path(gmm_init_path)
         if path.is_file():
-            return [path]
+            return [(path, 1.0, None)]
         if not path.is_dir():
             raise FileNotFoundError(f"Missing GMM init path: {path}")
 
@@ -310,19 +325,26 @@ class ComposedGMM_MDN(GaussianMDN):
             files = []
             with metadata_path.open(newline="", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
-                if "gmm_path" not in (reader.fieldnames or []):
+                fieldnames = reader.fieldnames or []
+                if "gmm_path" not in fieldnames:
                     raise ValueError(f"{metadata_path} must contain a gmm_path column")
                 for row in reader:
                     gmm_path = Path(row["gmm_path"])
                     if not gmm_path.exists():
                         gmm_path = path / row["gmm_path"]
-                    files.append(gmm_path)
+                    try:
+                        profile_weight = float(row.get("num_xvectors", "") or 1.0)
+                    except ValueError:
+                        profile_weight = 1.0
+                    if profile_weight <= 0.0:
+                        profile_weight = 1.0
+                    files.append((gmm_path, profile_weight, ComposedGMM_MDN.metadata_profile_key(row)))
             if files:
                 return files
 
         profiles_dir = path / "profiles"
         search_dir = profiles_dir if profiles_dir.is_dir() else path
-        return sorted(search_dir.rglob("*.npz"))
+        return [(gmm_path, 1.0, None) for gmm_path in sorted(search_dir.rglob("*.npz"))]
 
     @classmethod
     def load_gmm_initializers(
@@ -330,11 +352,14 @@ class ComposedGMM_MDN(GaussianMDN):
         gmm_init_path: str | Path | None,
         output_dim: int,
         min_sigma: float,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, list[tuple[str, ...] | None]]:
         mu_parts = []
         sigma_parts = []
+        pi_parts = []
+        component_profile_keys: list[tuple[str, ...] | None] = []
 
-        for gmm_path in cls.gmm_files_from_path(gmm_init_path):
+        gmm_entries = cls.gmm_files_from_path(gmm_init_path)
+        for gmm_path, profile_weight, profile_key in gmm_entries:
             if not gmm_path.exists():
                 raise FileNotFoundError(f"Missing precomputed GMM file: {gmm_path}")
             with np.load(gmm_path) as data:
@@ -342,25 +367,40 @@ class ComposedGMM_MDN(GaussianMDN):
                     raise ValueError(f"{gmm_path} must contain mu and sigma arrays")
                 mu = np.asarray(data["mu"], dtype=np.float32)
                 sigma = np.asarray(data["sigma"], dtype=np.float32)
+                pi = np.asarray(data["pi"], dtype=np.float32) if "pi" in data else None
 
             if mu.ndim == 1:
                 mu = mu.reshape(1, -1)
             if sigma.ndim == 1:
                 sigma = sigma.reshape(1, -1)
+            if pi is None:
+                pi = np.full(mu.shape[0], 1.0 / mu.shape[0], dtype=np.float32)
+            else:
+                pi = pi.reshape(-1).astype(np.float32)
             if mu.shape != sigma.shape:
                 raise ValueError(f"{gmm_path} has mismatched mu/sigma shapes: {mu.shape} vs {sigma.shape}")
             if mu.shape[1] != output_dim:
                 raise ValueError(f"{gmm_path} has output_dim={mu.shape[1]}, expected {output_dim}")
+            if pi.shape[0] != mu.shape[0]:
+                raise ValueError(f"{gmm_path} has pi shape {pi.shape}, expected {mu.shape[0]} weights")
+            pi_sum = float(pi.sum())
+            if pi_sum <= 0.0:
+                raise ValueError(f"{gmm_path} has non-positive pi sum: {pi_sum}")
 
             mu_parts.append(mu)
             sigma_parts.append(np.maximum(sigma, min_sigma))
+            pi_parts.append((pi / pi_sum) * float(profile_weight))
+            component_profile_keys.extend([profile_key] * mu.shape[0])
 
         if not mu_parts:
             raise ValueError(f"No .npz GMM files found in {gmm_init_path}")
 
         mu_init = torch.tensor(np.concatenate(mu_parts, axis=0), dtype=torch.float32)
         sigma_init = torch.tensor(np.concatenate(sigma_parts, axis=0), dtype=torch.float32)
-        return mu_init, sigma_init
+        pi_init = np.concatenate(pi_parts, axis=0)
+        pi_init = torch.tensor(pi_init, dtype=torch.float32)
+        pi_init = pi_init / pi_init.sum()
+        return mu_init, sigma_init, pi_init, component_profile_keys
 
     def forward(self, x):
         """

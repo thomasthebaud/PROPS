@@ -12,6 +12,7 @@ import pandas as pd
 
 
 DESC_COLUMNS = [f"desc{i}" for i in range(10)]
+EXTRA_DESC_COLUMNS = ["capspeech_desc"]
 DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 
@@ -57,10 +58,15 @@ def output_path(output_dir: Path, row_index: int, desc_column: str) -> Path:
     return output_dir / f"{row_index}/{desc_column}.npz"
 
 
+def description_columns(df: pd.DataFrame) -> list[str]:
+    return [column for column in [*DESC_COLUMNS, *EXTRA_DESC_COLUMNS] if column in df.columns]
+
+
 def iter_jobs(df: pd.DataFrame, output_dir: Path, overwrite: bool) -> list[tuple[int, str, str, Path]]:
     jobs: list[tuple[int, str, str, Path]] = []
+    desc_columns = description_columns(df)
     for row_index, row in df.iterrows():
-        for desc_column in DESC_COLUMNS:
+        for desc_column in desc_columns:
             description = str(row[desc_column]).strip()
             if not description or description.lower() == "nan":
                 continue
@@ -101,6 +107,7 @@ def main() -> int:
     missing_columns = [column for column in DESC_COLUMNS if column not in df.columns]
     if missing_columns:
         raise ValueError(f"{args.input} is missing columns: {missing_columns}")
+    desc_columns = description_columns(df)
 
     if args.limit is not None:
         df = df.head(args.limit)
@@ -108,7 +115,7 @@ def main() -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     jobs = iter_jobs(df=df, output_dir=args.output_dir, overwrite=args.overwrite)
     print(f"Loaded {len(df)} rows from {args.input}", flush=True)
-    print(f"Embedding {len(jobs)} descriptions with {args.model}", flush=True)
+    print(f"Embedding {len(jobs)} descriptions from columns={desc_columns} with {args.model}", flush=True)
 
     if not jobs:
         print("Nothing to do.", flush=True)

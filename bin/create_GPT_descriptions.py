@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 
 DESC_COLUMNS = [f"desc{i}" for i in range(10)]
+DEFAULT_FIELDS = ["pitch", "age", "gender", "speaking_rate", "speech_monotony", "accent"]
 DEFAULT_MODEL = "gpt-5.4-mini-2026-03-17"
 UNKNOWN_VALUE = "unknown"
 
@@ -75,7 +76,10 @@ def write_rows(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) ->
 
 def known_profile_fields(row: dict[str, str], source_columns: list[str]) -> dict[str, str]:
     fields: dict[str, str] = {}
-    for column in source_columns:
+    source_column_set = set(source_columns)
+    for column in DEFAULT_FIELDS:
+        if column not in source_column_set:
+            continue
         value = (row.get(column) or "").strip()
         if value and value.lower() != UNKNOWN_VALUE:
             fields[column] = value
@@ -84,6 +88,44 @@ def known_profile_fields(row: dict[str, str], source_columns: list[str]) -> dict
 
 def row_has_descriptions(row: dict[str, str]) -> bool:
     return all((row.get(column) or "").strip() for column in DESC_COLUMNS)
+
+
+def profile_key(row: dict[str, str], source_columns: list[str]) -> tuple[tuple[str, str], ...]:
+    return tuple(known_profile_fields(row, source_columns).items())
+
+
+def copy_descriptions(target: dict[str, str], source: dict[str, str]) -> None:
+    for column in DESC_COLUMNS:
+        value = (source.get(column) or "").strip()
+        if value:
+            target[column] = value
+
+
+def merge_existing_descriptions(
+    rows: list[dict[str, str]],
+    source_columns: list[str],
+    existing_rows: list[dict[str, str]],
+    existing_columns: list[str],
+) -> int:
+    existing_by_profile: dict[tuple[tuple[str, str], ...], dict[str, str]] = {}
+    for row in existing_rows:
+        if not row_has_descriptions(row):
+            continue
+        key = profile_key(row, existing_columns)
+        if key and key not in existing_by_profile:
+            existing_by_profile[key] = row
+
+    reused = 0
+    for row in rows:
+        if row_has_descriptions(row):
+            continue
+        key = profile_key(row, source_columns)
+        existing = existing_by_profile.get(key)
+        if existing is None:
+            continue
+        copy_descriptions(row, existing)
+        reused += 1
+    return reused
 
 
 def build_prompt(profile: dict[str, str]) -> str:
@@ -186,18 +228,23 @@ def main() -> int:
     source_columns, rows = read_rows(args.input)
     output_columns = source_columns + [column for column in DESC_COLUMNS if column not in source_columns]
 
+    reused = 0
     if args.output.exists() and not args.overwrite:
         existing_columns, existing_rows = read_rows(args.output)
-        if DESC_COLUMNS == existing_columns[-10:]:
-            rows = existing_rows
-            output_columns = existing_columns
+        if all(column in existing_columns for column in DESC_COLUMNS):
+            reused = merge_existing_descriptions(
+                rows=rows,
+                source_columns=source_columns,
+                existing_rows=existing_rows,
+                existing_columns=existing_columns,
+            )
 
     if args.limit is not None:
         rows_to_process = rows[: args.limit]
     else:
         rows_to_process = rows
 
-    client = load_openai_client(args.key, args.org)
+    client = None
     total = len(rows_to_process)
     generated = 0
     skipped = 0
@@ -212,6 +259,8 @@ def main() -> int:
             raise ValueError(f"row {index} has no known fields to send to GPT")
 
         # print(f"[{index}/{total}] generating descriptions for {profile}", flush=True)
+        if client is None:
+            client = load_openai_client(args.key, args.org)
         descriptions = generate_descriptions(
             client=client,
             model=args.model,
@@ -228,7 +277,7 @@ def main() -> int:
             time.sleep(args.sleep)
 
     write_rows(args.output, output_columns, rows)
-    print(f"Saved {args.output} generated={generated} skipped={skipped}", flush=True)
+    print(f"Saved {args.output} generated={generated} reused={reused} skipped={skipped}", flush=True)
     return 0
 
 

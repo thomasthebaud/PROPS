@@ -1,73 +1,106 @@
+#!/usr/bin/env python3
+"""Find valid profile combinations for one generated metadata dataset."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+from typing import Any
+
 import pandas as pd
-import numpy as np
-from tqdm import tqdm
 
-dfs=[]
-dataset_list = ["CommonVoice_dev", "CommonVoice_test", "GigaSpeech_test", "CommonVoice_train", "GigaSpeech_train"]
-dataset_list = ["CommonVoice_dev", "CommonVoice_test", "CommonVoice_train"]
-columns_of_interest = ['pitch', 'age', 'gender', 'speaking_rate', 'speech_monotony', 'accent']
-columns_of_interest = ['gender', 'age', 'accent']
-
-for dataset in dataset_list:
-    dfs.append(pd.read_csv(f'data/{dataset}/segments.csv'))
-df = pd.concat(dfs)
-df = df[['speaker']+columns_of_interest]
-print(f"Loaded {len(df)} utterances")
-
-descs = df[columns_of_interest]
-descs.drop_duplicates(inplace=True)
-descs=descs.fillna('unknown')
-print(f"Found {len(descs)} unique descriptions")
+DEFAULT_FIELDS = ["pitch", "age", "gender", "speaking_rate", "speech_monotony", "accent"]
+UNKNOWN = "unknown"
 
 
-combinations = {col:[] for col in descs.columns}
-descs.loc[-1] = ['unknown']*len(descs.columns)
-if len(columns_of_interest)==6:
-    for pitch in set(descs['pitch']):
-        for age in set(descs['age']):
-            for gender in set(descs['gender']):
-                for speaking_rate in set(descs['speaking_rate']):
-                    for speech_monotony in set(descs['speech_monotony']):
-                        for accent in set(descs['accent']):
-                            combinations['pitch'].append(pitch)
-                            combinations['age'].append(age)
-                            combinations['gender'].append(gender)
-                            combinations['speaking_rate'].append(speaking_rate)
-                            combinations['speech_monotony'].append(speech_monotony)
-                            combinations['accent'].append(accent)
-elif len(columns_of_interest)==3:
-    for age in set(descs['age']):
-        for gender in set(descs['gender']):
-            for accent in set(descs['accent']):
-                combinations['age'].append(age)
-                combinations['gender'].append(gender)
-                combinations['accent'].append(accent)
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Create profile_combinations.csv for one dataset directory.")
+    parser.add_argument("--dataset-name", default="CommonVoice", help="Dataset directory under --data-root.")
+    parser.add_argument("--data-root", type=Path, default=Path("data"))
+    parser.add_argument("--splits", default="train,dev,test", help="Comma-separated split CSV stems to read.")
+    parser.add_argument("--fields", default=",".join(DEFAULT_FIELDS), help="Comma-separated profile fields to use when present.")
+    parser.add_argument("--output", type=Path, default=None)
+    return parser.parse_args()
 
-combinations = pd.DataFrame(combinations)
-print(f"With the fields: {descs.columns}")
-print(f'Makes a total of {len(combinations)} combinations.')
 
-combinations['valid']=True
-for idx, row in tqdm(combinations.iterrows(), total=len(combinations), desc='finding represented combinations in the dataset'):
-    valid_desc = descs.copy()
-    for col in descs.columns:
-        if row[col]!='unknown': 
-            valid_desc = valid_desc[valid_desc[col]==row[col]]
-            if len(valid_desc)==0:
-                combinations.at[idx, 'valid']=False
-                break
+def normalize(value: Any) -> str:
+    if pd.isna(value):
+        return UNKNOWN
+    text = str(value).strip()
+    return text if text else UNKNOWN
 
-print(f"Only {len(combinations[combinations['valid']])}/{len(combinations)} are represented in the current dataset")
-valid_combinations = combinations[combinations['valid']]
 
-valid_combinations.pop('valid')
-all_unknown = valid_combinations.copy()
-for col in all_unknown.columns:
-    all_unknown = all_unknown[all_unknown[col]=='unknown']
-print('dropping index:', int(all_unknown.index[0]))
-valid_combinations.drop(int(all_unknown.index[0]), inplace=True)
-print("Removed the one 'all unknown' combination.")
+def load_dataset(data_root: Path, dataset_name: str, splits: list[str]) -> pd.DataFrame:
+    frames = []
+    for split in splits:
+        path = data_root / dataset_name / f"{split}.csv"
+        if not path.exists() or path.stat().st_size == 0:
+            print(f"WARNING: skipping missing/empty {path}", flush=True)
+            continue
+        df = pd.read_csv(path)
+        if df.empty:
+            print(f"WARNING: skipping header-only {path}", flush=True)
+            continue
+        df["split"] = split
+        frames.append(df)
+    if not frames:
+        raise ValueError(f"No split CSVs found for {dataset_name} under {data_root}")
+    return pd.concat(frames, ignore_index=True, sort=False)
 
-csv_path = 'data/profile_combinations.csv'
-valid_combinations.to_csv(csv_path, index=False)
-print(f"Saved in {csv_path}")
+
+def clean_prompt(value: object) -> str:
+    if pd.isna(value):
+        return ""
+    text = str(value).strip()
+    if not text or text.lower() == "nan":
+        return ""
+    return text
+
+
+def first_nonempty(values: pd.Series) -> str:
+    for value in values:
+        text = clean_prompt(value)
+        if text:
+            return text
+    return ""
+
+
+def existing_combinations(df: pd.DataFrame, fields: list[str]) -> pd.DataFrame:
+    grouped = df.groupby(fields, dropna=False, sort=True)
+    profiles = grouped.size().reset_index(name="num_audios")
+
+    if "capspeech_prompt" in df.columns:
+        descs = grouped["capspeech_prompt"].agg(first_nonempty).reset_index(name="capspeech_desc")
+        profiles = profiles.merge(descs, on=fields, how="left")
+        if not profiles["capspeech_desc"].astype(bool).any():
+            profiles = profiles.drop(columns=["capspeech_desc"])
+        else:
+            profiles["capspeech_desc"] = profiles["capspeech_desc"].fillna("")
+
+    return profiles.reset_index(drop=True)
+
+
+def main() -> int:
+    args = parse_args()
+    splits = [item.strip() for item in args.splits.split(",") if item.strip()]
+    requested_fields = [item.strip() for item in args.fields.split(",") if item.strip()]
+    df = load_dataset(args.data_root, args.dataset_name, splits)
+
+    fields = [field for field in requested_fields if field in df.columns]
+    if not fields:
+        raise ValueError(f"None of requested fields {requested_fields} are present in {args.dataset_name}")
+    for field in fields:
+        df[field] = df[field].map(normalize)
+
+    combinations = existing_combinations(df, fields)
+    print(f"{args.dataset_name}: found {len(combinations)} existing combinations over fields={fields}", flush=True)
+
+    output = args.output or (args.data_root / args.dataset_name / "profile_combinations.csv")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    combinations.to_csv(output, index=False)
+    print(f"Saved {len(combinations)} existing combinations to {output}", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

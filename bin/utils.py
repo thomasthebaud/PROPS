@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Iterable
@@ -14,9 +15,13 @@ from tqdm.auto import tqdm
 
 
 FIELDS = ["pitch", "age", "gender", "speaking_rate", "speech_monotony", "accent"]
-PROFILE_FIELDS = ["age", "accent", "gender"]
 DEFAULT_TEST_DATASETS = ["CommonVoice_test"]
 AGE_LABEL_ORDER = [
+    "child",
+    "teenager",
+    "young adult",
+    "middle-aged adult",
+    "elderly",
     "teens",
     "twenties",
     "thirties",
@@ -28,6 +33,54 @@ AGE_LABEL_ORDER = [
     "eighties",
     "nineties",
 ]
+PITCH_LABEL_ORDER = [
+    "low-pitch",
+    "slightly low-pitch",
+    "moderate pitch",
+    "slightly high-pitch",
+    "high-pitch",
+    "very high-pitch",
+]
+SPEAKING_RATE_LABEL_ORDER = [
+    "slowly",
+    "slightly slowly",
+    "moderate speed",
+    "slightly fast",
+    "fast",
+]
+SPEECH_MONOTONY_LABEL_ORDER = [
+    "very monotone",
+    "monotone",
+    "slightly expressive and animated",
+    "expressive and animated",
+    "very expressive and animated",
+]
+CHARACTERISTIC_LABEL_ORDERS = {
+    "age": AGE_LABEL_ORDER,
+    "pitch": PITCH_LABEL_ORDER,
+    "speaking_rate": SPEAKING_RATE_LABEL_ORDER,
+    "speech_monotony": SPEECH_MONOTONY_LABEL_ORDER,
+}
+CHARACTERISTIC_LABEL_ALIASES = {
+    "pitch": {
+        "high-pitched": "high-pitch",
+        "high_pitch": "high-pitch",
+        "high_pitched": "high-pitch",
+        "low-pitched": "low-pitch",
+        "low_pitch": "low-pitch",
+        "low_pitched": "low-pitch",
+        "medium-pitched": "moderate pitch",
+        "medium_pitch": "moderate pitch",
+        "medium_pitched": "moderate pitch",
+        "moderate_pitch": "moderate pitch",
+    },
+    "speaking_rate": {
+        "slow speed": "slow",
+        "slow_speed": "slow",
+        "fast speed": "fast",
+        "fast_speed": "fast",
+    },
+}
 
 
 def parse_csv_paths(value: str | Iterable[str]) -> list[str]:
@@ -43,13 +96,20 @@ def normalize_value(value: Any) -> str:
     return text if text else "unknown"
 
 
+def normalize_characteristic_value(characteristic: str, value: Any) -> str:
+    text = normalize_value(value)
+    aliases = CHARACTERISTIC_LABEL_ALIASES.get(characteristic, {})
+    return aliases.get(text, text)
+
+
 def sort_characteristic_labels(characteristic: str, labels: Iterable[str]) -> list[str]:
-    labels = list(labels)
-    if characteristic != "age":
+    labels = sorted({normalize_characteristic_value(characteristic, label) for label in labels})
+    label_order = CHARACTERISTIC_LABEL_ORDERS.get(characteristic)
+    if label_order is None:
         return sorted(labels)
 
-    age_rank = {label: idx for idx, label in enumerate(AGE_LABEL_ORDER)}
-    return sorted(labels, key=lambda label: (age_rank.get(label, len(age_rank)), label))
+    rank = {label: idx for idx, label in enumerate(label_order)}
+    return sorted(labels, key=lambda label: (rank.get(label, len(rank)), label))
 
 
 def normalize_xvector(xvector: np.ndarray) -> np.ndarray:
@@ -61,7 +121,7 @@ def normalize_xvector(xvector: np.ndarray) -> np.ndarray:
 
 
 def condition_key(row: pd.Series | dict[str, Any], fields: list[str]) -> tuple[str, ...]:
-    return tuple(normalize_value(row.get(field, "unknown")) for field in fields)
+    return tuple(normalize_characteristic_value(field, row.get(field, "unknown")) for field in fields)
 
 
 def condition_mask(
@@ -74,16 +134,115 @@ def condition_mask(
     for field in fields:
         if field not in utterances.columns:
             continue
-        value = normalize_value(condition.get(field, "unknown"))
+        value = normalize_characteristic_value(field, condition.get(field, "unknown"))
         if unknown_is_wildcard and value == "unknown":
             continue
         mask &= utterances[field].map(normalize_value).to_numpy() == value
     return mask
 
 
+def safe_file_value(value: Any) -> str:
+    text = normalize_value(value).lower()
+    safe_chars = [char if char.isalnum() else "_" for char in text]
+    safe = "_".join("".join(safe_chars).split("_"))
+    return safe or "unknown"
+
+
+def parse_profile_fields_from_gmm_id(gmm_id: Any) -> dict[str, str]:
+    """Recover profile fields from descriptive generated-GMM filename stems."""
+    stem = Path(normalize_value(gmm_id)).stem
+    if stem.endswith("_gmm"):
+        stem = stem[: -len("_gmm")]
+
+    parsed: dict[str, str] = {}
+    fields_by_length = sorted(FIELDS, key=len, reverse=True)
+    for part in stem.split("__"):
+        for field in fields_by_length:
+            prefix = f"{field}_"
+            if part.startswith(prefix):
+                value = part[len(prefix) :]
+                if value and value != "unknown":
+                    parsed[field] = value
+                break
+    return parsed
+
+
+def values_match(left: Any, right: Any) -> bool:
+    left_value = normalize_value(left)
+    right_value = normalize_value(right)
+    return left_value == right_value or safe_file_value(left_value) == safe_file_value(right_value)
+
+
 def safe_file_stem(text: Any) -> str:
     value = normalize_value(text)
     return "".join(char if char.isalnum() or char in "._=-" else "_" for char in value)
+
+
+def safe_xvector_stem(text: Any) -> str:
+    value = normalize_value(text)
+    return re.sub(r"[^A-Za-z0-9._-]+", "_", value).strip("_") or "unknown"
+
+
+SPLIT_NAMES = {"train", "dev", "test"}
+
+
+def resolve_dataset_metadata(dataset_name: str) -> tuple[Path, str]:
+    if "_" in dataset_name:
+        base_name, split = dataset_name.rsplit("_", 1)
+        if split in SPLIT_NAMES:
+            split_csv_path = Path("data") / base_name / f"{split}.csv"
+            if split_csv_path.exists():
+                return split_csv_path, dataset_name
+
+    dataset_dir = Path("data") / dataset_name
+    if dataset_dir.is_dir():
+        existing_splits = [split for split in ("test", "dev", "train") if (dataset_dir / f"{split}.csv").exists()]
+        if "test" in existing_splits:
+            return dataset_dir / "test.csv", f"{dataset_name}_test"
+        if len(existing_splits) == 1:
+            split = existing_splits[0]
+            return dataset_dir / f"{split}.csv", f"{dataset_name}_{split}"
+        if existing_splits:
+            raise FileNotFoundError(
+                f"{dataset_name!r} is ambiguous and has no test.csv; pass one of "
+                f"{', '.join(f'{dataset_name}_{split}' for split in existing_splits)}"
+            )
+
+    raise FileNotFoundError(
+        f"Could not find split metadata for {dataset_name!r}. Expected "
+        f"data/<dataset>/<train|dev|test>.csv with a dataset name like CommonVoice_test."
+    )
+
+
+def row_xvector_dataset(row: pd.Series, fallback_dataset: str) -> str:
+    row_dataset = normalize_value(row.get("dataset", "unknown"))
+    row_split = normalize_value(row.get("split", "unknown"))
+    if row_dataset != "unknown" and row_split != "unknown":
+        return f"{row_dataset}_{row_split}"
+    if row_dataset != "unknown":
+        return row_dataset
+    return fallback_dataset
+
+
+def unique_preserving_order(values: Iterable[Any]) -> list[str]:
+    seen: set[str] = set()
+    unique_values: list[str] = []
+    for value in values:
+        text = normalize_value(value)
+        if text == "unknown" or text in seen:
+            continue
+        seen.add(text)
+        unique_values.append(text)
+    return unique_values
+
+
+def candidate_xvector_paths(xvector_dir: Path, row: pd.Series) -> list[Path]:
+    utterance_id = normalize_value(row.get("id", "unknown"))
+    storage_path = normalize_value(row.get("storage_path", "unknown"))
+    stems = [safe_xvector_stem(utterance_id), utterance_id, safe_file_stem(utterance_id)]
+    if storage_path != "unknown":
+        stems.append(safe_xvector_stem(Path(storage_path).stem))
+    return [xvector_dir / f"{stem}.npz" for stem in unique_preserving_order(stems)]
 
 
 def load_profile_conditions(path: Path, fields: list[str] | None = None) -> tuple[pd.DataFrame, list[str]]:
@@ -169,8 +328,9 @@ def prune_gmm_components(
     pi: np.ndarray,
     mu: np.ndarray,
     sigma: np.ndarray,
-    threshold_multiplier: float = 2.0,
+    threshold_multiplier: float = 1.0,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    # return pi, mu, sigma
     pi = np.asarray(pi, dtype=np.float64)
     mu = np.asarray(mu, dtype=np.float64)
     sigma = np.asarray(sigma, dtype=np.float64)
@@ -236,24 +396,58 @@ def gmm_log_likelihood(xvectors: np.ndarray, pi: np.ndarray, mu: np.ndarray, sig
 
 
 def load_gmm_metadata(path: Path) -> pd.DataFrame:
+    metadata_dir = path.parent
     metadata = pd.read_csv(path).fillna("unknown")
-    if "gmm_path" not in metadata.columns:
-        raise ValueError(f"{path} must contain a gmm_path column")
+    if "gmm_id" not in metadata.columns:
+        if "gmm_path" in metadata.columns:
+            metadata["gmm_id"] = metadata["gmm_path"].map(lambda item: Path(str(item)).stem)
+        else:
+            raise ValueError(f"{path} must contain a gmm_id or gmm_path column")
+
     for field in FIELDS:
         if field not in metadata.columns:
             metadata[field] = "unknown"
-        metadata[field] = metadata[field].map(normalize_value)
+        metadata[field] = metadata[field].map(lambda value, field=field: normalize_characteristic_value(field, value))
+
+    for index, row in metadata.iterrows():
+        parsed_fields = parse_profile_fields_from_gmm_id(row.get("gmm_id", "unknown"))
+        for field, value in parsed_fields.items():
+            if normalize_value(metadata.at[index, field]).lower() == "unknown":
+                metadata.at[index, field] = normalize_characteristic_value(field, value)
+
+    if "gmm_path" not in metadata.columns:
+        metadata["gmm_path"] = metadata["gmm_id"].map(
+            lambda gmm_id: str(metadata_dir / "profiles" / f"{gmm_id}.npz")
+        )
+    else:
+        def resolve_gmm_path(value: Any, gmm_id: Any) -> str:
+            gmm_path = Path(str(value))
+            if gmm_path.exists() or gmm_path.is_absolute():
+                return str(gmm_path)
+            metadata_relative = metadata_dir / gmm_path
+            if metadata_relative.exists():
+                return str(metadata_relative)
+            sibling_profile = metadata_dir / "profiles" / f"{normalize_value(gmm_id)}.npz"
+            if sibling_profile.exists():
+                return str(sibling_profile)
+            return str(gmm_path)
+
+        metadata["gmm_path"] = [
+            resolve_gmm_path(row.get("gmm_path", "unknown"), row.get("gmm_id", "unknown"))
+            for _, row in metadata.iterrows()
+        ]
     return metadata
 
 
 def find_generated_gmm(metadata: pd.DataFrame, condition: dict[str, Any], strict_unknown_other_fields: bool = True) -> pd.Series | None:
     mask = np.ones(len(metadata), dtype=bool)
     for field in FIELDS:
-        target = normalize_value(condition.get(field, "unknown"))
+        target = normalize_characteristic_value(field, condition.get(field, "unknown"))
+        values = metadata[field].map(lambda value, field=field: normalize_characteristic_value(field, value)).to_numpy()
         if field in condition:
-            mask &= metadata[field].map(normalize_value).to_numpy() == target
+            mask &= np.array([values_match(value, target) for value in values], dtype=bool)
         elif strict_unknown_other_fields:
-            mask &= metadata[field].map(normalize_value).str.lower().to_numpy() == "unknown"
+            mask &= np.array([safe_file_value(value) == "unknown" for value in values], dtype=bool)
     matches = metadata.loc[mask]
     if matches.empty:
         return None
@@ -279,42 +473,54 @@ def load_xvectors(
         else:
             dataset_name, proportion = dataset_spec, None
 
-        segments_path = Path("data") / dataset_name / "segments.csv"
-        segments = pd.read_csv(segments_path)
+        metadata_path, xvector_dataset = resolve_dataset_metadata(str(dataset_name))
+        metadata = pd.read_csv(metadata_path)
+        if "id" not in metadata.columns:
+            raise ValueError(f"{metadata_path} is missing required column: id")
         if proportion is not None:
             if rng is None:
                 rng = np.random.default_rng(0)
-            sample_size = max(1, int(round(len(segments) * proportion)))
-            sample_indices = rng.choice(len(segments), size=sample_size, replace=False)
-            segments = segments.iloc[np.sort(sample_indices)].reset_index(drop=True)
-            print(f"Using {len(segments)} sampled rows from {dataset_name} ({proportion:g})", flush=True)
+            sample_size = max(1, int(round(len(metadata) * proportion)))
+            sample_indices = rng.choice(len(metadata), size=sample_size, replace=False)
+            metadata = metadata.iloc[np.sort(sample_indices)].reset_index(drop=True)
+            print(f"Using {len(metadata)} sampled rows from {dataset_name} ({proportion:g})", flush=True)
+
         for field in FIELDS:
-            if field not in segments.columns:
-                segments[field] = "unknown"
-            segments[field] = segments[field].map(normalize_value)
+            if field not in metadata.columns:
+                metadata[field] = "unknown"
+            metadata[field] = metadata[field].map(lambda value, field=field: normalize_characteristic_value(field, value))
         if profile is not None:
-            segments = segments.loc[condition_mask(segments, profile, profile_fields)].reset_index(drop=True)
+            metadata = metadata.loc[condition_mask(metadata, profile, profile_fields)].reset_index(drop=True)
 
         load_items = []
-        for _, segment in segments.iterrows():
-            utterance_id = str(segment["id"])
-            xvector_path = xvector_root / dataset_name / "xvectors" / f"{utterance_id}.npz"
+        for _, utterance in metadata.iterrows():
+            utterance_id = normalize_value(utterance.get("id", "unknown"))
+            row_dataset = row_xvector_dataset(utterance, xvector_dataset)
+            xvector_dir = xvector_root / row_dataset / "xvectors"
+            paths = candidate_xvector_paths(xvector_dir, utterance)
             row_info = {
-                "dataset": dataset_name,
+                "dataset": row_dataset,
+                "source_dataset": normalize_value(utterance.get("dataset", "unknown")),
+                "split": normalize_value(utterance.get("split", "unknown")),
+                "metadata_path": str(metadata_path),
                 "utterance_id": utterance_id,
-                "speaker": normalize_value(segment.get("speaker", "unknown")),
-                **{field: normalize_value(segment.get(field, "unknown")) for field in FIELDS},
+                "speaker": normalize_value(utterance.get("speaker", "unknown")),
+                "storage_path": normalize_value(utterance.get("storage_path", "unknown")),
+                **{field: normalize_characteristic_value(field, utterance.get(field, "unknown")) for field in FIELDS},
             }
-            load_items.append((xvector_path, row_info))
+            load_items.append((paths, row_info))
 
-        def load_one(item: tuple[Path, dict[str, Any]]) -> tuple[dict[str, Any], np.ndarray]:
-            xvector_path, row_info = item
-            if not xvector_path.exists():
-                raise FileNotFoundError(f"Missing xvector: {xvector_path}")
-            with np.load(xvector_path) as data:
+        def load_one(item: tuple[list[Path], dict[str, Any]]) -> tuple[dict[str, Any], np.ndarray]:
+            xvector_paths, row_info = item
+            existing_path = next((candidate for candidate in xvector_paths if candidate.exists()), None)
+            if existing_path is None:
+                tried = ", ".join(str(candidate) for candidate in xvector_paths)
+                raise FileNotFoundError(f"Missing xvector for id={row_info['utterance_id']!r}. Tried: {tried}")
+            with np.load(existing_path) as data:
                 xvector = np.asarray(data["xvector"], dtype=np.float64)
             if normalize:
                 xvector = normalize_xvector(xvector)
+            row_info["xvector_path"] = str(existing_path)
             return row_info, xvector
 
         if num_workers <= 1:
@@ -327,7 +533,7 @@ def load_xvectors(
             for row_info, xvector in tqdm(
                 iterator,
                 total=len(load_items),
-                desc=f"Loading xvectors {dataset_name}",
+                desc=f"Loading xvectors {xvector_dataset}",
                 unit="xvec",
             ):
                 rows.append(row_info)

@@ -57,7 +57,11 @@ def main() -> int:
     category_values = utterances[args.category].astype(str).to_numpy()
     category_labels = sort_characteristic_labels(
         args.category,
-        (label for label in set(category_values) if label != "unknown"),
+        (
+            label
+            for label in set(category_values)
+            if label != "unknown" and not (args.category == "age" and label == "child")
+        ),
     )
     label_counts = {
         label: int(np.sum(category_values == label))
