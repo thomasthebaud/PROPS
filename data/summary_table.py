@@ -76,12 +76,27 @@ def build_rows(data_root: Path, datasets: list[str]) -> list[dict[str, object]]:
     return rows
 
 
-def add_grand_total(rows: list[dict[str, object]]) -> list[dict[str, object]]:
-    total_row: dict[str, object] = {"dataset": "TOTAL"}
-    for split in [*SPLITS, "total"]:
-        total_row[f"{split}_hours"] = sum(float(row[f"{split}_hours"]) for row in rows)
-        total_row[f"{split}_segments"] = sum(int(row[f"{split}_segments"]) for row in rows)
-    return [*rows, total_row]
+def build_dataset_row(data_root: Path, dataset: str, label: str | None = None) -> dict[str, object]:
+    row: dict[str, object] = {"dataset": label or dataset}
+    total_segments = 0
+    total_hours = 0.0
+    for split in SPLITS:
+        segments, hours = read_split(data_root / dataset / f"{split}.csv")
+        row[f"{split}_hours"] = hours
+        row[f"{split}_segments"] = segments
+        total_segments += segments
+        total_hours += hours
+    row["total_hours"] = total_hours
+    row["total_segments"] = total_segments
+    return row
+
+
+def add_capspeech_totals(data_root: Path, rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    return [
+        *rows,
+        build_dataset_row(data_root, "Capspeech", label="total"),
+        build_dataset_row(data_root, "Capspeech_min100", label="total after filter"),
+    ]
 
 
 def print_table(rows: list[dict[str, object]]) -> None:
@@ -154,7 +169,7 @@ def main() -> int:
     datasets = discover_datasets(args.data_root, args.datasets)
     if not datasets:
         raise SystemExit(f"No generated dataset split CSVs found under {args.data_root}")
-    rows = add_grand_total(build_rows(args.data_root, datasets))
+    rows = add_capspeech_totals(args.data_root, build_rows(args.data_root, datasets))
     print_table(rows)
     write_latex(rows, args.latex_output)
     return 0

@@ -4,16 +4,16 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
-K=1
+K=4
 dataset_name="Capspeech_min100"
 model='pretrain'
 train_fraction=1
 run_name="${K}_components_${dataset_name}_p=${train_fraction}_${model}"
-N=5000
+N=1000
 N_min=50
 
 output_dir="exp/graphs/${run_name}"
-gmm_metadata_csv="exp/GMMs/${run_name}_desc0/metadata.csv"
+gmm_metadata_csv="exp/GMMs/${dataset_name}_test/${run_name}/metadata.csv"
 mkdir -p "$output_dir"
 
 accents=(
@@ -126,4 +126,4 @@ done
 
 wait
 
-echo "LDA histograms written under ${output_dir}"
+echo "PCA histograms written under ${output_dir}"

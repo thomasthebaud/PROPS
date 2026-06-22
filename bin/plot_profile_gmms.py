@@ -10,6 +10,7 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -19,14 +20,12 @@ from sklearn.mixture import GaussianMixture
 
 from utils import (
     DEFAULT_TEST_DATASETS,
-    condition_key,
     condition_mask,
-    load_gmm,
+    generated_gmm_matches,
     load_gmm_metadata,
     load_xvectors,
     normalize_value,
-    prune_gmm_components,
-    sample_gmm,
+    sample_gmm_rows,
 )
 
 
@@ -122,7 +121,7 @@ def requested_conditions(args: argparse.Namespace) -> list[pd.Series]:
 
 def condition_label(condition: pd.Series) -> str:
     known = [
-        f"{field.replace('_', ' ')}={normalize_value(condition[field])}"
+        normalize_value(condition[field])
         for field in PLOT_FIELDS
         if normalize_value(condition[field]) != "unknown"
     ]
@@ -155,8 +154,6 @@ def projection_blocks(profiles: list[dict[str, Any]], test_key: str) -> list[tup
                 (profile_idx, "generated_points", profile["generated_points"]),
                 (profile_idx, "ground_truth_points", profile["ground_truth_points"]),
                 (profile_idx, "test_xvectors", profile[test_key]),
-                (profile_idx, "generated_centers", profile["generated_centers"]),
-                (profile_idx, "ground_truth_centers", profile["ground_truth_centers"]),
             ]
         )
     return blocks
@@ -221,8 +218,8 @@ def build_lda_projection(profiles: list[dict[str, Any]]) -> tuple[list[dict[str,
         f"LDA fit on test xvectors: {training_xvectors.shape}, classes={len(profiles)}; "
         f"transformed: {projected.shape}"
     )
-    y_label = "LD2" if n_components > 1 else "0"
-    return split_projection(projected, blocks, profiles), "LD1", y_label
+    y_label = "LDA - dimension 2"
+    return split_projection(projected, blocks, profiles), "LDA - dimension 1", y_label
 
 
 
@@ -261,9 +258,7 @@ def draw_profile_layers(
     color: tuple[float, float, float],
     show_test_kde: bool = False,
     show_test_xvectors: bool = False,
-    show_test_centers: bool = False,
     show_generated_kde: bool = False,
-    show_generated_centers: bool = False,
 ) -> None:
     generated_points = profile["generated_points"]
     ground_truth_points = profile["ground_truth_points"]
@@ -309,30 +304,6 @@ def draw_profile_layers(
             linewidths=0,
             zorder=5,
         )
-    if show_generated_centers:
-        ax.scatter(
-            profile["generated_centers"][:, 0],
-            profile["generated_centers"][:, 1],
-            marker="o",
-            s=48,
-            facecolors="none",
-            edgecolors=color,
-            linewidths=1.3,
-            alpha=0.98,
-            zorder=6,
-        )
-    if show_test_centers:
-        ax.scatter(
-            profile["ground_truth_centers"][:, 0],
-            profile["ground_truth_centers"][:, 1],
-            marker="^",
-            s=52,
-            facecolors="none",
-            edgecolors=color,
-            linewidths=1.4,
-            alpha=0.98,
-            zorder=6,
-        )
 
 
 def render_panel(
@@ -365,34 +336,29 @@ def render_distribution_plot(
 ) -> None:
     palette = sns.color_palette("tab10", n_colors=max(1, len(projected_profiles)))
     limits = compute_axis_limits(projected_profiles)
-    title_profiles = "; ".join(profile["label"] for profile in projected_profiles)
 
     sns.set_theme(style="whitegrid", context="notebook")
     fig, axes = plt.subplots(2, 2, figsize=(15, 12), sharex=True, sharey=True)
-    fig.suptitle(f"{title_prefix}: generated vs test-set GMM ({title_profiles})", fontsize=14)
 
     render_panel(
         axes[0, 0],
         projected_profiles,
         palette,
-        "Test-set KDE, x-vectors, centers",
+        "Test-set KDE",
         limits,
         x_label,
         y_label,
         show_test_kde=True,
-        show_test_xvectors=True,
-        show_test_centers=True,
     )
     render_panel(
         axes[0, 1],
         projected_profiles,
         palette,
-        "Generated KDE and centers",
+        "Generated KDE",
         limits,
         x_label,
         y_label,
         show_generated_kde=True,
-        show_generated_centers=True,
     )
     render_panel(
         axes[1, 0],
@@ -404,9 +370,7 @@ def render_distribution_plot(
         y_label,
         show_test_kde=True,
         show_test_xvectors=True,
-        show_test_centers=True,
         show_generated_kde=True,
-        show_generated_centers=True,
     )
     render_panel(
         axes[1, 1],
@@ -423,70 +387,198 @@ def render_distribution_plot(
         Line2D([0], [0], marker="o", linestyle="None", color=color, label=profile["label"])
         for profile, color in zip(projected_profiles, palette)
     ]
-    layer_handles = [
-        Line2D([0], [0], color="black", linewidth=6, alpha=0.20, label="Generated KDE fill"),
-        Line2D([0], [0], color="black", linestyle="--", label="Test-set KDE contours"),
-        Line2D([0], [0], marker=".", linestyle="None", color="black", label="Test x-vectors"),
-        Line2D([0], [0], marker="o", linestyle="None", markerfacecolor="none", color="black", label="Generated centers"),
-        Line2D([0], [0], marker="^", linestyle="None", markerfacecolor="none", color="black", label="Test-set centers"),
-    ]
-    fig.legend(handles=profile_handles, loc="upper center", bbox_to_anchor=(0.5, 0.955), ncol=2, frameon=True, title="Profiles")
-    fig.legend(handles=layer_handles, loc="lower center", bbox_to_anchor=(0.5, 0.01), ncol=3, frameon=True, title="Layers")
-    fig.tight_layout(rect=(0, 0.06, 1, 0.92))
+    fig.legend(
+        handles=profile_handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.035),
+        ncol=max(1, len(profile_handles)),
+        frameon=True,
+        title="Profiles",
+    )
+    fig.tight_layout(rect=(0, 0.09, 1, 1))
 
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(output_path, dpi=220)
+    plt.close(fig)
+    render_all_layers_plot(projected_profiles, output_path, x_label, y_label)
+
+
+def all_layers_output_path(output_path: Path) -> Path:
+    return output_path.with_name(f"{output_path.stem}_all_layers{output_path.suffix}")
+
+
+def render_all_layers_plot(
+    projected_profiles: list[dict[str, Any]],
+    output_path: Path,
+    x_label: str,
+    y_label: str,
+) -> Path:
+    palette = sns.color_palette("tab10", n_colors=max(1, len(projected_profiles)))
+    limits = compute_axis_limits(projected_profiles)
+    all_layers_path = all_layers_output_path(output_path)
+
+    sns.set_theme(style="whitegrid", context="notebook")
+    fig, ax = plt.subplots(figsize=(8.8, 7.0))
+    render_panel(
+        ax,
+        projected_profiles,
+        palette,
+        "All layers",
+        limits,
+        x_label,
+        y_label,
+        show_test_kde=True,
+        show_test_xvectors=True,
+        show_generated_kde=True,
+    )
+
+    profile_handles = [
+        Line2D([0], [0], marker="o", linestyle="None", color=color, label=profile["label"])
+        for profile, color in zip(projected_profiles, palette)
+    ]
+    layer_handles = [
+        Line2D([0], [0], color="black", linestyle="--", linewidth=1.9, label="Test-set KDE"),
+        Patch(facecolor="black", alpha=0.20, label="Generated KDE"),
+        Line2D([0], [0], marker=".", linestyle="None", color="black", markersize=9, label="Test-set x-vectors"),
+    ]
+    layer_legend = ax.legend(handles=layer_handles, loc="upper right", frameon=True, title="Layers")
+    ax.add_artist(layer_legend)
+    ax.legend(
+        handles=profile_handles,
+        loc="lower right",
+        ncol=1,
+        frameon=True,
+        title="Profiles",
+    )
+    fig.tight_layout()
+
+    all_layers_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(all_layers_path, dpi=220)
+    plt.close(fig)
+    print(f"Wrote {all_layers_path}", flush=True)
+    return all_layers_path
+
+
+def draw_histogram_layers(
+    ax: plt.Axes,
+    projected_profiles: list[dict[str, Any]],
+    palette: list[tuple[float, float, float]],
+    value_key: str,
+    title: str,
+    x_label: str,
+) -> None:
+    for profile, color in zip(projected_profiles, palette):
+        values = np.asarray(profile[value_key])[:, 0]
+        ax.hist(
+            values,
+            bins=40,
+            density=True,
+            alpha=0.28,
+            color=color,
+            label=f"{profile['label']} (n={len(values)})",
+        )
+        if len(values) >= 3:
+            sns.kdeplot(x=values, ax=ax, color=color, linewidth=2.0)
+    ax.set_title(title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel("Density")
+    ax.grid(True, alpha=0.25)
+    ax.legend()
+
+
+def render_two_class_histogram_plot(
+    projected_profiles: list[dict[str, Any]],
+    output_path: Path,
+    x_label: str,
+    title_prefix: str,
+) -> None:
+    palette = sns.color_palette("tab10", n_colors=2)
+
+    sns.set_theme(style="whitegrid", context="notebook")
+    fig, axes = plt.subplots(2, 1, figsize=(9.5, 8.0), sharex=True)
+
+    draw_histogram_layers(
+        axes[0],
+        projected_profiles,
+        palette,
+        "test_xvectors",
+        "Test-set x-vector distributions",
+        x_label,
+    )
+    draw_histogram_layers(
+        axes[1],
+        projected_profiles,
+        palette,
+        "generated_points",
+        "Generated GMM sample distributions",
+        x_label,
+    )
+
+    fig.tight_layout()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=220)
     plt.close(fig)
 
 
 def plot_kdes(profiles: list[dict[str, Any]], output_path: Path, include_lda: bool = False) -> list[Path]:
-    projected_pca, pca_x_label, pca_y_label = build_pca_projection(profiles)
-    pca_output = prefixed_output_path(output_path, "PCA")
-    render_distribution_plot(projected_pca, pca_output, "PCA", pca_x_label, pca_y_label)
-
-    output_paths = [pca_output]
     if include_lda:
         projected_lda, lda_x_label, lda_y_label = build_lda_projection(profiles)
-        lda_output = prefixed_output_path(output_path, "LDA")
-        render_distribution_plot(projected_lda, lda_output, "LDA", lda_x_label, lda_y_label)
-        output_paths.append(lda_output)
-    return output_paths
+        if len(projected_lda) == 2:
+            render_two_class_histogram_plot(projected_lda, output_path, lda_x_label, "LDA")
+        else:
+            render_distribution_plot(projected_lda, output_path, "LDA", lda_x_label, lda_y_label)
+        output_paths = [output_path]
+
+        projected_pca, pca_x_label, pca_y_label = build_pca_projection(profiles)
+        pca_output = prefixed_output_path(output_path, "PCA")
+        if len(projected_pca) == 2:
+            render_two_class_histogram_plot(projected_pca, pca_output, pca_x_label, "PCA")
+        else:
+            render_distribution_plot(projected_pca, pca_output, "PCA", pca_x_label, pca_y_label)
+        output_paths.append(pca_output)
+        return output_paths
+
+    projected_pca, pca_x_label, pca_y_label = build_pca_projection(profiles)
+    if len(projected_pca) == 2:
+        render_two_class_histogram_plot(projected_pca, output_path, pca_x_label, "PCA")
+    else:
+        render_distribution_plot(projected_pca, output_path, "PCA", pca_x_label, pca_y_label)
+    return [output_path]
 
 
 def build_profile_data(
     condition: pd.Series,
     utterances: pd.DataFrame,
     xvectors: np.ndarray,
-    gmm_lookup: dict[tuple[str, ...], pd.Series],
+    gmm_metadata: pd.DataFrame,
     args: argparse.Namespace,
     rng: np.random.Generator,
 ) -> dict[str, Any] | None:
-    key = condition_key(condition, PLOT_FIELDS)
+    condition_dict = {field: normalize_value(condition[field]) for field in PLOT_FIELDS}
     mask = condition_mask(utterances, condition, PLOT_FIELDS)
     selected_xvectors = xvectors[mask]
     if len(selected_xvectors) == 0:
-        print(f"Skipping {dict(zip(PLOT_FIELDS, key))}: no matching test xvectors", flush=True)
+        print(f"Skipping {condition_dict}: no matching test xvectors", flush=True)
         return None
-    
-    gmm_row = gmm_lookup.get(key)
-    if gmm_row is None:
-        raise KeyError(f"No generated GMM metadata found for condition={dict(zip(PLOT_FIELDS, key))}")
 
-    gmm_path = Path(str(gmm_row["gmm_path"]))
-    if not gmm_path.exists():
-        raise FileNotFoundError(f"Missing generated GMM file: {gmm_path}")
-
-    _, generated_pi, generated_mu, generated_sigma = load_gmm(gmm_path)
-    generated_pi, generated_mu, generated_sigma = prune_gmm_components(
-        generated_pi,
-        generated_mu,
-        generated_sigma,
+    gmm_rows = generated_gmm_matches(
+        gmm_metadata,
+        condition_dict,
+        strict_unknown_other_fields=False,
+        unknown_is_wildcard=True,
     )
-    generated_points = sample_gmm(
-        (generated_pi, generated_mu, generated_sigma),
+    if gmm_rows.empty:
+        raise KeyError(f"No generated GMM metadata found for condition={condition_dict}")
+
+    generated_points, sampled_gmm_rows = sample_gmm_rows(
+        gmm_rows,
         args.samples,
         rng,
+        prune_components=True,
     )
+    first_gmm_path = Path(str(sampled_gmm_rows.iloc[0]["gmm_path"]))
+    if not first_gmm_path.exists():
+        raise FileNotFoundError(f"Missing generated GMM file: {first_gmm_path}")
 
     ground_truth_gmm = fit_ground_truth_gmm(
         selected_xvectors,
@@ -496,18 +588,16 @@ def build_profile_data(
     ground_truth_points, _ = ground_truth_gmm.sample(args.samples)
 
     print(f"Profile {condition_label(condition)}: matched {len(selected_xvectors)} test xvectors", flush=True)
-    # print(f"Weights from the K gaussians = {list(generated_pi)}")
-    print(f"Loaded generated GMM from {gmm_path}", flush=True)
+    print(f"Sampled N={args.samples} from {len(gmm_rows)} matching generated GMMs (first sampled: {first_gmm_path})", flush=True)
     return {
         "label": condition_label(condition),
         "condition": condition,
         "generated_points": generated_points,
         "ground_truth_points": ground_truth_points,
-        "generated_centers": generated_mu,
-        "ground_truth_centers": ground_truth_gmm.means_,
         "test_xvectors": selected_xvectors,
         "num_test_xvectors": len(selected_xvectors),
-        "gmm_path": gmm_path,
+        "gmm_path": first_gmm_path,
+        "num_generated_gmms": len(gmm_rows),
     }
 
 
@@ -531,12 +621,11 @@ def main() -> int:
         raise ValueError(f"No xvectors loaded from {args.test_csv_paths}")
 
     gmm_metadata = load_gmm_metadata(args.gmm_metadata_csv)
-    gmm_lookup = {condition_key(row, PLOT_FIELDS): row for _, row in gmm_metadata.iterrows()}
 
     profiles = [
         profile
         for condition in conditions
-        if (profile := build_profile_data(condition, utterances, xvectors, gmm_lookup, args, rng)) is not None
+        if (profile := build_profile_data(condition, utterances, xvectors, gmm_metadata, args, rng)) is not None
     ]
     if not profiles:
         raise ValueError("No requested profiles had matching test xvectors")

@@ -34,6 +34,7 @@ AGE_LABEL_ORDER = [
     "nineties",
 ]
 PITCH_LABEL_ORDER = [
+    "very low-pitch",
     "low-pitch",
     "slightly low-pitch",
     "moderate pitch",
@@ -374,6 +375,38 @@ def sample_gmm(
     return xvectors
 
 
+def sample_gmm_rows(
+    gmm_rows: pd.DataFrame,
+    n_samples: int,
+    rng: np.random.Generator,
+    *,
+    prune_components: bool = False,
+) -> tuple[np.ndarray, pd.DataFrame]:
+    if gmm_rows.empty:
+        raise ValueError("Cannot sample from an empty set of GMM rows")
+    if n_samples <= 0:
+        raise ValueError("n_samples must be positive")
+
+    counts = rng.multinomial(n_samples, np.full(len(gmm_rows), 1.0 / len(gmm_rows)))
+    batches = []
+    sampled_row_indices = []
+    for row_position, (count, (_, gmm_row)) in enumerate(zip(counts, gmm_rows.iterrows())):
+        if count == 0:
+            continue
+        gmm_path = Path(str(gmm_row["gmm_path"]))
+        if prune_components:
+            _pi_logits, pi, mu, sigma = load_gmm(gmm_path)
+            pi, mu, sigma = prune_gmm_components(pi, mu, sigma)
+            batches.append(sample_gmm((pi, mu, sigma), int(count), rng))
+        else:
+            batches.append(sample_gmm(gmm_path, int(count), rng))
+        sampled_row_indices.append(row_position)
+
+    if not batches:
+        raise ValueError("No samples drawn from matching GMM rows")
+    return np.vstack(batches), gmm_rows.iloc[sampled_row_indices]
+
+
 def gmm_log_likelihood(xvectors: np.ndarray, pi: np.ndarray, mu: np.ndarray, sigma: np.ndarray) -> np.ndarray:
     xvectors = np.asarray(xvectors, dtype=np.float64)
     pi = np.maximum(np.asarray(pi, dtype=np.float64), 1e-300)
@@ -439,16 +472,38 @@ def load_gmm_metadata(path: Path) -> pd.DataFrame:
     return metadata
 
 
-def find_generated_gmm(metadata: pd.DataFrame, condition: dict[str, Any], strict_unknown_other_fields: bool = True) -> pd.Series | None:
+def generated_gmm_matches(
+    metadata: pd.DataFrame,
+    condition: dict[str, Any],
+    *,
+    strict_unknown_other_fields: bool = True,
+    unknown_is_wildcard: bool = False,
+) -> pd.DataFrame:
     mask = np.ones(len(metadata), dtype=bool)
     for field in FIELDS:
         target = normalize_characteristic_value(field, condition.get(field, "unknown"))
         values = metadata[field].map(lambda value, field=field: normalize_characteristic_value(field, value)).to_numpy()
         if field in condition:
+            if unknown_is_wildcard and target == "unknown":
+                continue
             mask &= np.array([values_match(value, target) for value in values], dtype=bool)
         elif strict_unknown_other_fields:
             mask &= np.array([safe_file_value(value) == "unknown" for value in values], dtype=bool)
-    matches = metadata.loc[mask]
+    return metadata.loc[mask]
+
+
+def find_generated_gmm(
+    metadata: pd.DataFrame,
+    condition: dict[str, Any],
+    strict_unknown_other_fields: bool = True,
+    unknown_is_wildcard: bool = False,
+) -> pd.Series | None:
+    matches = generated_gmm_matches(
+        metadata,
+        condition,
+        strict_unknown_other_fields=strict_unknown_other_fields,
+        unknown_is_wildcard=unknown_is_wildcard,
+    )
     if matches.empty:
         return None
     return matches.iloc[0]

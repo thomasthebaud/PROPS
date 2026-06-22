@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$script_dir"
 
-K=1
+K=16
 dataset_name="Capspeech_min100"
 train_fraction=0.1
 pretrain_fraction=1
@@ -16,7 +16,7 @@ echo "Fine-tuning ComposedGMM_MDN from ${pretrain_checkpoint} using per-sample C
 
 srun -p gpu --gpus 1 python bin/finetune.py \
   --epochs 10 \
-  --batch-size 256 \
+  --batch-size 128 \
   --device cuda \
   --checkpoint "$pretrain_checkpoint" \
   --output "$output_checkpoint" \

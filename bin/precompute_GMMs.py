@@ -555,16 +555,53 @@ def main() -> int:
 
     all_profile_items = list(enumerate(profiles.iterrows(), start=1))
     total_profiles = len(all_profile_items)
+    eligible_profile_items: list[tuple[int, tuple[int, pd.Series]]] = []
+    ineligible_profile_items: list[tuple[int, tuple[int, pd.Series], str]] = []
+    if show_progress:
+        print(f"Selecting profiles with at least K={args.K} metadata rows before sharding", flush=True)
+    for profile_number, profile_item in all_profile_items:
+        _, profile = profile_item
+        selected_rows = utterances.loc[profile_mask(utterances, profile, profile_fields)]
+        num_matching_rows = len(selected_rows)
+        if num_matching_rows == 0:
+            ineligible_profile_items.append((profile_number, profile_item, "no_matching_metadata_rows"))
+            continue
+        if num_matching_rows < args.K:
+            ineligible_profile_items.append((profile_number, profile_item, f"insufficient_metadata_rows_for_K={args.K}"))
+            continue
+        eligible_profile_items.append((profile_number, profile_item))
+
+    total_eligible_profiles = len(eligible_profile_items)
+    if show_progress:
+        print(
+            f"Selected {total_eligible_profiles}/{total_profiles} profiles with at least K={args.K} metadata rows; "
+            f"filtered_out={len(ineligible_profile_items)}",
+            flush=True,
+        )
     profile_items = [
-        item for item in all_profile_items if (item[0] - 1) % args.num_shards == args.shard_index
+        item for idx, item in enumerate(eligible_profile_items) if idx % args.num_shards == args.shard_index
     ]
     profile_items = [
         (shard_position, profile_number, profile_item)
         for shard_position, (profile_number, profile_item) in enumerate(profile_items, start=1)
     ]
     shard_total_profiles = len(profile_items)
+    skipped_rows.extend(
+        {
+            "profile_index": int(profile["source_profile_index"]),
+            "reason": reason,
+            **{field: normalize_value(profile[field]) for field in profile_fields},
+        }
+        for idx, (_profile_number, (_, profile), reason) in enumerate(ineligible_profile_items)
+        if idx % args.num_shards == args.shard_index
+    )
     if show_progress:
-        print(f"Shard {args.shard_index}/{args.num_shards}: processing {shard_total_profiles}/{total_profiles} profiles", flush=True)
+        print(
+            f"Shard {args.shard_index}/{args.num_shards}: processing "
+            f"{shard_total_profiles}/{total_eligible_profiles} metadata-eligible profiles "
+            f"({total_profiles} profiles before filtering)",
+            flush=True,
+        )
     if effective_profile_workers <= 1:
         profile_results = map(process_profile, profile_items)
     else:
@@ -613,7 +650,7 @@ def main() -> int:
         skipped_fields = ["profile_index", "reason", *profile_fields]
         write_metadata(skipped_path, skipped_fields, skipped_rows)
         if show_progress:
-            print(f"Skipped {len(skipped_rows)} profiles with no matching xvectors", flush=True)
+            print(f"Skipped {len(skipped_rows)} ineligible profiles", flush=True)
 
     computed_now = sum(1 for row in metadata_rows if row["computed_now"])
     reused = len(metadata_rows) - computed_now

@@ -14,20 +14,81 @@ import numpy as np
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
+from sklearn.svm import SVC, SVR
 from sklearn.utils.class_weight import compute_sample_weight
 
 from utils import (
     DEFAULT_TEST_DATASETS,
     FIELDS,
-    find_generated_gmm,
+    generated_gmm_matches,
     load_gmm_metadata,
     load_xvectors,
     parse_csv_paths,
-    sample_gmm,
+    sample_gmm_rows,
     sort_characteristic_labels,
     write_csv,
 )
+
+
+ORDINAL_CHARACTERISTICS = {"age", "speech_monotony", "pitch", "speaking_rate"}
+
+
+def is_ordinal_characteristic(characteristic: str) -> bool:
+    return characteristic in ORDINAL_CHARACTERISTICS
+
+
+def label_rank_maps(characteristic: str, labels: list[str]) -> tuple[dict[str, int], dict[int, str]]:
+    ordered_labels = sort_characteristic_labels(characteristic, labels)
+    label_to_rank = {label: rank for rank, label in enumerate(ordered_labels)}
+    rank_to_label = {rank: label for label, rank in label_to_rank.items()}
+    return label_to_rank, rank_to_label
+
+
+def ordinal_targets(labels: np.ndarray, label_to_rank: dict[str, int]) -> np.ndarray:
+    return np.asarray([label_to_rank[label] for label in labels], dtype=np.float64)
+
+
+def ordinal_predict(classifier, xvectors: np.ndarray, rank_to_label: dict[int, str]) -> np.ndarray:
+    numeric_predictions = np.asarray(classifier.predict(xvectors), dtype=np.float64)
+    return ordinal_ranks_to_labels(numeric_predictions, rank_to_label)
+
+
+def ordinal_ranks_to_labels(numeric_predictions: np.ndarray, rank_to_label: dict[int, str]) -> np.ndarray:
+    max_rank = max(rank_to_label)
+    ranks = np.rint(numeric_predictions).astype(int)
+    ranks = np.clip(ranks, 0, max_rank)
+    return np.asarray([rank_to_label[int(rank)] for rank in ranks], dtype=str)
+
+
+def fused_ordinal_predict(
+    svr_classifier,
+    svc_classifier,
+    xvectors: np.ndarray,
+    label_to_rank: dict[str, int],
+    rank_to_label: dict[int, str],
+) -> np.ndarray:
+    svr_ranks = np.asarray(svr_classifier.predict(xvectors), dtype=np.float64)
+    svc_labels = svc_classifier.predict(xvectors)
+    svc_ranks = np.asarray([label_to_rank[str(label)] for label in svc_labels], dtype=np.float64)
+    fused_ranks = 0.5 * (svr_ranks + svc_ranks)
+    return ordinal_ranks_to_labels(fused_ranks, rank_to_label)
+
+
+def predict_ordinal_by_mode(
+    mode: str,
+    svr_classifier,
+    svc_classifier,
+    xvectors: np.ndarray,
+    label_to_rank: dict[str, int],
+    rank_to_label: dict[int, str],
+) -> np.ndarray:
+    if mode == "fusion":
+        return fused_ordinal_predict(svr_classifier, svc_classifier, xvectors, label_to_rank, rank_to_label)
+    if mode == "svr":
+        return ordinal_predict(svr_classifier, xvectors, rank_to_label)
+    if mode == "svc":
+        return np.asarray(svc_classifier.predict(xvectors), dtype=str)
+    raise ValueError(f"Unsupported ordinal classifier mode: {mode}")
 
 
 def confusion_matrix_values(
@@ -46,15 +107,32 @@ def confusion_matrix_values(
     return matrix, normalized
 
 
-def matrix_accuracy(matrix: np.ndarray) -> float:
-    total = int(matrix.sum())
-    if total == 0:
+def macro_accuracy_from_matrix(matrix: np.ndarray) -> float:
+    row_totals = matrix.sum(axis=1)
+    valid_rows = row_totals > 0
+    if not np.any(valid_rows):
         return float("nan")
-    return float(np.trace(matrix) / total)
+    per_label_accuracy = np.divide(
+        np.diag(matrix)[valid_rows],
+        row_totals[valid_rows],
+        out=np.zeros(int(np.sum(valid_rows)), dtype=np.float64),
+        where=row_totals[valid_rows] != 0,
+    )
+    return float(np.mean(per_label_accuracy))
 
 
-def labels_with_counts(labels: list[str], counts: np.ndarray) -> list[str]:
-    return [f"{label} (n={int(count)})" for label, count in zip(labels, counts)]
+def macro_accuracy(
+    labels: list[str],
+    true_labels: list[str] | np.ndarray,
+    predicted_labels: list[str] | np.ndarray,
+) -> float | None:
+    if len(true_labels) == 0:
+        return None
+    matrix = confusion_matrix(true_labels, predicted_labels, labels=labels)
+    value = macro_accuracy_from_matrix(matrix)
+    if np.isnan(value):
+        return None
+    return value
 
 
 def draw_confusion_panel(
@@ -68,7 +146,7 @@ def draw_confusion_panel(
 ):
     row_counts = matrix.sum(axis=1)
     col_counts = matrix.sum(axis=0)
-    title_accuracy = matrix_accuracy(matrix)
+    title_accuracy = macro_accuracy_from_matrix(matrix)
     title_suffix = "n/a" if np.isnan(title_accuracy) else f"{title_accuracy:.1%}"
 
     image = ax.imshow(normalized, cmap="Blues", vmin=0.0, vmax=1.0)
@@ -78,7 +156,7 @@ def draw_confusion_panel(
     ax.set_yticklabels(labels)
     ax.set_xlabel(f"Predicted {characteristic}")
     ax.set_ylabel(ylabel)
-    ax.set_title(f"{title} acc={title_suffix}")
+    ax.set_title(f"{title} macro acc={title_suffix}")
 
     threshold = 0.5
     for row_idx in range(matrix.shape[0]):
@@ -171,29 +249,31 @@ def format_accuracy(value: float | None) -> str:
     return f"{100.0 * value:.1f}"
 
 
+def display_characteristic_name(value: object) -> str:
+    return str(value).replace("_", " ").title()
+
+
 def write_latex_results(path: Path, rows: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
-        r"\begin{tabular}{lrrrrr}",
-        r"\hline",
-        r"Characteristic & Train acc. & Real test acc. & Generated acc. & Train xvecs & Real test xvecs \\",
-        r"\hline",
+        '\\\\begin{tabular}{lrrr}',
+        '\\\\hline',
+        'Characteristic & Real & Generated & Number of classes \\\\',
+        '\\\\hline',
     ]
     for row in rows:
         lines.append(
             " & ".join(
                 [
-                    latex_escape(row["characteristic"]),
-                    format_accuracy(row["classifier_train_accuracy"]),
+                    latex_escape(display_characteristic_name(row["characteristic"])),
                     format_accuracy(row["real_test_accuracy"]),
                     format_accuracy(row["generated_accuracy"]),
-                    str(row["total_num_classifier_train_xvectors"]),
-                    str(row["real_test_num_xvectors"]),
+                    str(row.get("num_classes", "")),
                 ]
             )
-            + r" \\",
+            + ' \\\\'
         )
-    lines.extend([r"\hline", r"\end{tabular}"])
+    lines.extend(['\\\\hline', '\\\\end{tabular}'])
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -204,8 +284,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--xvector-root", type=Path, default=Path("exp/xvectors/ecapa_tdnn"))
     parser.add_argument("--gmm-metadata-csv", type=Path, required=True)
     parser.add_argument("--output-csv", type=Path, required=True)
+    parser.add_argument("--confusion-output-dir", type=Path, default=None)
     parser.add_argument("--characteristics", type=parse_csv_paths, default=["gender", "age", "accent"])
     parser.add_argument("--samples", type=int, default=1000)
+    parser.add_argument(
+        "--ordinal-classifier-mode",
+        choices=["fusion", "svc", "svr"],
+        default="fusion",
+        help="Classifier to use for ordinal characteristics: fused SVR+SVC, SVC only, or SVR only.",
+    )
     parser.add_argument(
         "--max-train-vectors",
         type=int,
@@ -257,7 +344,7 @@ def main() -> int:
     metadata = load_gmm_metadata(args.gmm_metadata_csv)
     rows: list[dict[str, object]] = []
     latex_rows: list[dict[str, object]] = []
-    output_dir = args.output_csv.parent
+    confusion_output_dir = args.confusion_output_dir or args.output_csv.parent
 
     for characteristic in args.characteristics:
         labels = train_utterances[characteristic].astype(str).to_numpy()
@@ -305,19 +392,51 @@ def main() -> int:
         label_counts = {label: int(len(indices)) for label, indices in train_indices_by_label.items()}
         total_num_classifier_train_xvectors = int(len(train_indices))
         print(
-            f"{characteristic}: training SVM with {total_num_classifier_train_xvectors} real xvectors "
+            f"{characteristic}: training classifier with {total_num_classifier_train_xvectors} real xvectors "
             f"across {len(known_labels)} labels: {label_counts}",
             flush=True,
         )
         sample_weights = compute_sample_weight(class_weight="balanced", y=train_labels)
-        classifier = make_pipeline(
-            StandardScaler(),
-            SVC(kernel="rbf", gamma="scale"),
-        )
-        classifier.fit(train_xvectors[train_indices], train_labels, svc__sample_weight=sample_weights)
-        train_accuracy = float(accuracy_score(train_labels, classifier.predict(train_xvectors[train_indices])))
+        label_to_rank: dict[str, int] = {}
+        rank_to_label: dict[int, str] = {}
+        if is_ordinal_characteristic(characteristic):
+            label_to_rank, rank_to_label = label_rank_maps(characteristic, known_labels)
+            svr_classifier = None
+            svc_classifier = None
+            if args.ordinal_classifier_mode in {"fusion", "svr"}:
+                svr_classifier = make_pipeline(
+                    StandardScaler(),
+                    SVR(kernel="rbf", gamma="scale"),
+                )
+                train_targets = ordinal_targets(train_labels, label_to_rank)
+                svr_classifier.fit(train_xvectors[train_indices], train_targets, svr__sample_weight=sample_weights)
+            if args.ordinal_classifier_mode in {"fusion", "svc"}:
+                svc_classifier = make_pipeline(
+                    StandardScaler(),
+                    SVC(kernel="rbf", gamma="scale"),
+                )
+                svc_classifier.fit(train_xvectors[train_indices], train_labels, svc__sample_weight=sample_weights)
+            train_predictions = predict_ordinal_by_mode(
+                args.ordinal_classifier_mode,
+                svr_classifier,
+                svc_classifier,
+                train_xvectors[train_indices],
+                label_to_rank,
+                rank_to_label,
+            )
+            classifier_type = f"ordinal {args.ordinal_classifier_mode.upper()}"
+        else:
+            classifier = make_pipeline(
+                StandardScaler(),
+                SVC(kernel="rbf", gamma="scale"),
+            )
+            classifier.fit(train_xvectors[train_indices], train_labels, svc__sample_weight=sample_weights)
+            train_predictions = classifier.predict(train_xvectors[train_indices])
+            classifier_type = "SVM"
+
+        train_accuracy = float(accuracy_score(train_labels, train_predictions))
         print(
-            f"{characteristic}: trained SVM on {total_num_classifier_train_xvectors} xvectors, "
+            f"{characteristic}: trained {classifier_type} on {total_num_classifier_train_xvectors} xvectors, "
             f"labels={known_labels}, train_accuracy={train_accuracy:.4f}",
             flush=True,
         )
@@ -328,11 +447,26 @@ def main() -> int:
         real_test_predictions: np.ndarray = np.array([], dtype=str)
         real_test_num_xvectors = int(np.sum(test_mask))
         if real_test_num_xvectors:
-            real_test_predictions = classifier.predict(test_xvectors[test_mask])
-            real_test_accuracy = float(accuracy_score(real_test_true_labels, real_test_predictions))
+            if is_ordinal_characteristic(characteristic):
+                real_test_predictions = predict_ordinal_by_mode(
+                    args.ordinal_classifier_mode,
+                    svr_classifier,
+                    svc_classifier,
+                    test_xvectors[test_mask],
+                    label_to_rank,
+                    rank_to_label,
+                )
+            else:
+                real_test_predictions = classifier.predict(test_xvectors[test_mask])
+            real_test_accuracy = macro_accuracy(known_labels, real_test_true_labels, real_test_predictions)
+            real_test_label_accuracies = {
+                label: float(np.mean(real_test_predictions[real_test_true_labels == label] == label))
+                for label in known_labels
+                if np.any(real_test_true_labels == label)
+            }
             print(
-                f"{characteristic}: real test accuracy={real_test_accuracy:.4f} "
-                f"({int(np.sum(real_test_predictions == real_test_true_labels))}/{real_test_num_xvectors} correct)",
+                f"{characteristic}: real test macro accuracy={real_test_accuracy:.4f} "
+                f"from per-label accuracies={real_test_label_accuracies}",
                 flush=True,
             )
         else:
@@ -341,20 +475,36 @@ def main() -> int:
         confusion_true_labels: list[str] = []
         confusion_predicted_labels: list[str] = []
         for label in known_labels:
-            gmm_row = find_generated_gmm(metadata, {characteristic: label})
-            if gmm_row is None:
-                print(f"Skipping {characteristic}={label}: no all-unknown generated GMM found", flush=True)
+            gmm_rows = generated_gmm_matches(
+                metadata,
+                {characteristic: label},
+                strict_unknown_other_fields=False,
+                unknown_is_wildcard=True,
+            )
+            if gmm_rows.empty:
+                print(f"Skipping {characteristic}={label}: no matching generated GMM found", flush=True)
                 continue
 
-            gmm_id = str(gmm_row.get("gmm_id", Path(str(gmm_row["gmm_path"])).stem))
-            gmm_path = Path(str(gmm_row["gmm_path"]))
+            generated_xvectors, sampled_gmm_rows = sample_gmm_rows(gmm_rows, args.samples, rng)
+            first_gmm_row = sampled_gmm_rows.iloc[0]
+            gmm_id = str(first_gmm_row.get("gmm_id", Path(str(first_gmm_row["gmm_path"])).stem))
+            gmm_path = Path(str(first_gmm_row["gmm_path"]))
             print(
-                f"{characteristic}={label}: testing SVM with {args.samples} generated xvectors "
-                f"sampled from {gmm_id}",
+                f"{characteristic}={label}: testing SVM with {len(generated_xvectors)} generated xvectors "
+                f"sampled across {len(gmm_rows)} matching GMMs (N={args.samples} total)",
                 flush=True,
             )
-            generated_xvectors = sample_gmm(gmm_path, args.samples, rng)
-            predictions = classifier.predict(generated_xvectors)
+            if is_ordinal_characteristic(characteristic):
+                predictions = predict_ordinal_by_mode(
+                    args.ordinal_classifier_mode,
+                    svr_classifier,
+                    svc_classifier,
+                    generated_xvectors,
+                    label_to_rank,
+                    rank_to_label,
+                )
+            else:
+                predictions = classifier.predict(generated_xvectors)
             accuracy = float(np.mean(predictions == label))
             print(
                 f"{characteristic}={label}: testing accuracy={accuracy:.4f} "
@@ -369,6 +519,7 @@ def main() -> int:
                     "label": label,
                     "accuracy": accuracy,
                     "num_generated_xvectors": len(generated_xvectors),
+                    "num_generated_gmms": len(gmm_rows),
                     "num_classifier_train_xvectors": label_counts[label],
                     "total_num_classifier_train_xvectors": total_num_classifier_train_xvectors,
                     "classifier_train_accuracy": train_accuracy,
@@ -380,15 +531,31 @@ def main() -> int:
             )
 
         if confusion_true_labels:
-            overall_accuracy = float(
-                accuracy_score(confusion_true_labels, confusion_predicted_labels)
+            generated_labels = [
+                label
+                for label in known_labels
+                if any(true_label == label for true_label in confusion_true_labels)
+            ]
+            overall_accuracy = macro_accuracy(
+                generated_labels,
+                confusion_true_labels,
+                confusion_predicted_labels,
             )
+            generated_label_accuracies = {
+                label: float(
+                    np.mean(
+                        np.asarray(confusion_predicted_labels)[np.asarray(confusion_true_labels) == label] == label
+                    )
+                )
+                for label in generated_labels
+            }
             rows.append(
                 {
                     "characteristic": characteristic,
                     "label": "overall",
-                    "accuracy": overall_accuracy,
+                    "accuracy": overall_accuracy if overall_accuracy is not None else "",
                     "num_generated_xvectors": len(confusion_true_labels),
+                    "num_generated_gmms": "",
                     "num_classifier_train_xvectors": "",
                     "total_num_classifier_train_xvectors": total_num_classifier_train_xvectors,
                     "classifier_train_accuracy": train_accuracy,
@@ -406,16 +573,16 @@ def main() -> int:
                     "generated_accuracy": overall_accuracy,
                     "total_num_classifier_train_xvectors": total_num_classifier_train_xvectors,
                     "real_test_num_xvectors": real_test_num_xvectors,
+                    "num_classes": len(known_labels),
                 }
             )
             print(
-                f"{characteristic}: overall generated accuracy={overall_accuracy:.4f} "
-                f"({int(np.sum(np.asarray(confusion_true_labels) == np.asarray(confusion_predicted_labels)))}/"
-                f"{len(confusion_true_labels)} correct)",
+                f"{characteristic}: overall generated macro accuracy={overall_accuracy:.4f} "
+                f"from per-label accuracies={generated_label_accuracies}",
                 flush=True,
             )
 
-            confusion_path = output_dir / f"confusion_{characteristic}.png"
+            confusion_path = confusion_output_dir / f"confusion_{characteristic}.png"
             save_confusion_matrix(
                 confusion_path,
                 characteristic,
@@ -427,6 +594,30 @@ def main() -> int:
             )
             print(f"Wrote confusion matrix to {confusion_path}", flush=True)
 
+    if latex_rows:
+        real_test_accuracies = [row["real_test_accuracy"] for row in latex_rows if row["real_test_accuracy"] is not None]
+        generated_accuracies = [row["generated_accuracy"] for row in latex_rows if row["generated_accuracy"] is not None]
+        train_accuracies = [row["classifier_train_accuracy"] for row in latex_rows if row["classifier_train_accuracy"] is not None]
+        average_real_test_accuracy = float(np.mean(real_test_accuracies)) if real_test_accuracies else None
+        average_generated_accuracy = float(np.mean(generated_accuracies)) if generated_accuracies else None
+        average_train_accuracy = float(np.mean(train_accuracies)) if train_accuracies else None
+        rows.append(
+            {
+                "characteristic": "average",
+                "label": "macro_over_characteristics",
+                "accuracy": average_generated_accuracy,
+                "num_generated_xvectors": "",
+                "num_generated_gmms": "",
+                "num_classifier_train_xvectors": "",
+                "total_num_classifier_train_xvectors": "",
+                "classifier_train_accuracy": average_train_accuracy,
+                "real_test_accuracy": average_real_test_accuracy,
+                "real_test_num_xvectors": "",
+                "gmm_id": "",
+                "gmm_path": "",
+            }
+        )
+
     write_csv(
         args.output_csv,
         rows,
@@ -435,6 +626,7 @@ def main() -> int:
             "label",
             "accuracy",
             "num_generated_xvectors",
+            "num_generated_gmms",
             "num_classifier_train_xvectors",
             "total_num_classifier_train_xvectors",
             "classifier_train_accuracy",

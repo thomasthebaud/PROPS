@@ -1,113 +1,141 @@
 # ProPs: Prompted Profile Synthesis for Natural Language-Conditioned Speaker Embedding Generation
 
-This repository contains the experiment pipeline for **ProPs**, a method for generating speaker-embedding distributions from natural language descriptions of speaker profiles. The code builds profile descriptions such as "a thirties male speaker with a US accent", embeds those descriptions with SBERT, and trains a mixture density network (MDN) to predict Gaussian mixture models (GMMs) in ECAPA-TDNN speaker-embedding space.
+This repository contains the experiment pipeline for **ProPs**, a method for generating speaker-embedding distributions from natural-language speaker-profile descriptions. The current workflow builds a merged Capspeech-style metadata set, extracts ECAPA-TDNN x-vectors, creates profile descriptions, precomputes real profile GMMs, trains a composed GMM MDN, generates profile-conditioned GMMs, and evaluates whether generated samples preserve requested characteristics.
 
-At a high level, the pipeline does the following:
+The top-level numbered shell scripts are the intended workflow entry points. They are written for a SLURM cluster and call Python jobs through `srun`.
 
-1. Builds metadata tables for CommonVoice and CapSpeech/GigaSpeech-style data.
-2. Extracts ECAPA-TDNN x-vectors for each utterance.
-3. Enumerates valid speaker-profile combinations.
-4. Generates multiple natural language prompts for each profile.
-5. Converts prompts to SBERT embeddings.
-6. Fits real-data profile GMMs from x-vectors.
-7. Trains a text-conditioned MDN.
-8. Uses the MDN to synthesize one GMM per prompt/profile.
-9. Evaluates whether the generated GMMs preserve requested profile characteristics.
-10. Produces scatter plots, confusion matrices, and LDA/PCA histograms.
+## Current Pipeline
 
-The top-level `01_*.sh` through `13_*.sh` scripts are the intended workflow entry points. They are written for a SLURM cluster and call Python jobs through `srun`.
+1. `00_prepare_metadata.sh`: prepare and clean dataset metadata, then write summary tables.
+2. `01_extract_xvectors.sh`: extract ECAPA-TDNN x-vectors.
+3. `02_get_descriptions.sh`: build profile combinations, merge them into Capspeech, generate descriptions, filter to `Capspeech_min100`, and build SBERT embeddings.
+4. `02b_make_smaller_sets.sh`: optionally derive smaller Capspeech subsets.
+5. `03_precompute_GMMs.sh`: fit one real-data GMM per profile for the main training/pretraining setup.
+6. `04_pretrain_MDN.sh`: pretrain `ComposedGMM_MDN` routing from profile SBERT embeddings.
+7. `06_fine_tune_MDN.sh`: fine-tune the pretrained composed MDN on per-sample Capspeech descriptions.
+8. `07_inference.sh`: generate one GMM per test/dev row from a checkpoint.
+9. `08_test_precomputed_GMMs.sh`: sweep precomputed real-data GMMs over multiple K values and evaluate Best-K behavior.
+10. `09_compute_NLLs.sh`: generate MDN GMMs, score dev/test x-vectors, score baseline distributions, and build an NLL LaTeX table.
+11. `10_characteristics_accuracy.sh`: train characteristic classifiers and evaluate generated GMM samples.
+12. `11_scatter_plot.sh`: generate profile scatter/KDE figures and gender-only histogram overlays.
+13. `12_confusion_matrices.sh`: generate log-likelihood confusion matrices.
+14. `13_LDA_histograms.sh`: generate LDA/PCA histogram comparisons.
 
 ## Repository Layout
 
 ```text
 .
+|-- 00_prepare_metadata.sh
 |-- 01_extract_xvectors.sh
 |-- 02_get_descriptions.sh
+|-- 02b_make_smaller_sets.sh
 |-- 03_precompute_GMMs.sh
-|-- 04_train_MDN.sh
-|-- 05_fine_tune_MDN.sh
-|-- 06_inference.sh
-|-- 07_characteristics_accuracy.sh
+|-- 04_pretrain_MDN.sh
+|-- 06_fine_tune_MDN.sh
+|-- 07_inference.sh
+|-- 08_test_precomputed_GMMs.sh
+|-- 09_compute_NLLs.sh
+|-- 10_characteristics_accuracy.sh
 |-- 11_scatter_plot.sh
 |-- 12_confusion_matrices.sh
 |-- 13_LDA_histograms.sh
 |-- bin/
 |   |-- characteristics_accuracy.py
+|   |-- compute_nll_scores.py
+|   |-- compute_nll_scores_to_random.py
 |   |-- create_GPT_descriptions.py
 |   |-- extract_xvectors.py
+|   |-- filter_capspeech_profiles.py
 |   |-- find_valid_combinations.py
+|   |-- finetune.py
 |   |-- get_SBERT_embeddings.py
 |   |-- inference.py
-|   |-- model.py
-|   |-- my_dataset.py
+|   |-- make_nll_table.py
+|   |-- merge_characteristics_accuracy.py
+|   |-- plot_gender_histograms.py
 |   |-- plot_profile_gmms.py
 |   |-- precompute_GMMs.py
-|   |-- test_metrics.py
+|   |-- pretrain.py
+|   |-- profiles_summary.py
+|   |-- test_precomputed_gmms.py
 |   |-- train.py
 |   |-- utils.py
 |   `-- graphs/
 |       |-- confusion_matrix.py
 |       `-- lda_histograms.py
 |-- data/
-|   |-- CommonVoice_dev/
-|   |-- CommonVoice_test/
-|   |-- CommonVoice_train/
-|   |-- GigaSpeech_test/
-|   |-- GigaSpeech_train/
-|   |-- make_capspeech_gigaspeech_dataset.py
-|   |-- make_commonvoice_dataset.py
-|   |-- profile_combinations.csv
-|   `-- profile_prompts.csv
+|   |-- clean_duplicates.py
+|   |-- merge_csvs.py
+|   |-- summary_table.py
+|   |-- CommonVoice/
+|   |-- Emilia-en/
+|   |-- GigaSpeech/
+|   |-- MLS-en/
+|   |-- Capspeech/
+|   `-- Capspeech_min100/
 |-- exp -> /export/fs06/tthebau1/SHADOW/PROPS/exp
-`-- visuals.ipynb
+`-- environment.yml
 ```
 
-`data/` holds dataset metadata CSVs. `exp/` is a symlink to the experiment artifact directory and stores extracted x-vectors, SBERT embeddings, precomputed and generated GMMs, trained MDN checkpoints, metrics, and figures.
+`data/` stores metadata CSVs. `exp/` is a symlink to the experiment artifact directory and stores extracted x-vectors, SBERT embeddings, GMMs, checkpoints, metrics, and figures.
 
 ## Data Format
 
-Each dataset directory under `data/` is expected to contain:
+Dataset directories use split CSVs:
 
-- `segments.csv`: one row per utterance segment. Required column: `id`. Common columns include `speaker`, `gender`, `age`, `accent`, `pitch`, `speaking_rate`, and `speech_monotony`.
-- `recordings.csv`: maps each segment `id` to a `storage_path`, `duration`, and `sample_freq`.
+```text
+data/<dataset>/train.csv
+data/<dataset>/dev.csv
+data/<dataset>/test.csv
+```
 
-CommonVoice data currently contains `id`, `gender`, `age`, `speaker`, `transcript`, and `accent`. GigaSpeech/CapSpeech metadata may additionally contain prosodic fields such as `pitch`, `speaking_rate`, and `speech_monotony`.
+Common columns are:
 
-The profile tables are:
+```text
+dataset,id,duration,speaker,split,storage_path,sample_freq,pitch,age,gender,speaking_rate,speech_monotony,accent,capspeech_prompt
+```
 
-- `data/profile_combinations.csv`: valid profile combinations represented by the available data. In the current checked-in table, the active fields are `gender`, `age`, and `accent`.
-- `data/profile_prompts.csv`: profile fields plus `desc0` through `desc9`. Each `desc*` column is a natural language description of the same profile.
+Capspeech-style profile tables include:
 
-By convention, `desc1` through `desc9` are used by the training dataset and `desc0` is reserved for inference/evaluation.
+- `profile_combinations.csv`: valid profile combinations and `num_audios` counts.
+- `unique_profile_combinations.csv`: one-known-field profiles used to ensure single-characteristic prompts exist.
+- `profile_prompts.csv`: profile rows plus generated description columns such as `capspeech_desc` or `desc*`.
+- `unique_profile_prompts.csv`: generated prompts for the single-known-field profiles.
+
+The main filtered working dataset is currently `Capspeech_min100`, produced from `Capspeech` by keeping profiles with at least 100 utterances.
 
 ## Environment
 
-The conda environment for this repository is pinned in `environment.yml`. Create it with:
+Create the conda environment with:
 
 ```bash
 conda env create -f environment.yml
 conda activate props
 ```
 
-The environment includes the Python, CUDA/PyTorch, audio, embedding, OpenAI, plotting, and scikit-learn dependencies used by the pipeline. The top-level scripts still assume SLURM is available for `srun`; on a non-SLURM machine, remove the `srun` prefix as described below.
+The scripts assume SLURM and CUDA for the GPU-heavy stages. On a non-SLURM machine, remove the `srun ...` prefix and set `--device cpu` or `--device cuda` as appropriate.
 
-The scripts assume CUDA is available for x-vector extraction, SBERT embedding, and MDN training unless the command-line `--device` options are changed.
+OpenAI credentials for prompt generation are loaded from `openai_keys.sh`; do not commit private keys.
 
-Before publishing or running prompt generation, configure OpenAI credentials securely for your environment. Do not commit private API keys.
+## 0. Prepare and Clean Metadata
 
-## Full Workflow
+Run:
 
-### 0. Build Dataset Metadata
+```bash
+bash 00_prepare_metadata.sh
+```
 
-The dataset preparation scripts live in `data/`.
+The dataset builders in `data/` create split metadata for `CommonVoice`, `GigaSpeech`, `MLS-en`, and `Emilia-en`. The active script then runs `data/clean_duplicates.py` on each dataset with 32 worker threads and finishes with `data/summary_table.py`.
 
-`data/make_commonvoice_dataset.py` reads CommonVoice TSVs from `/export/corpora7/CommonVoice-19.0/en/`, filters speakers with known age, gender, duration, and usable accent labels, maps detailed accent strings into broader accent categories, and writes `segments.csv` and `recordings.csv` for the CommonVoice train, test, and dev splits.
+`data/clean_duplicates.py` processes `train.csv`, `dev.csv`, and `test.csv` in parallel and writes the cleaned files in place. It reads large CSVs in chunks, prints one-line label sets for every profile field before and after cleaning, and reports how many dashed-accent rows were removed per split.
 
-`data/make_capspeech_gigaspeech_dataset.py` reads CapSpeech/GigaSpeech metadata, merges prompt/caption metadata with audio metadata, removes missing audio files, and writes `segments.csv` and `recordings.csv` for GigaSpeech splits.
+Current normalization rules are:
 
-These scripts contain local filesystem paths and may need editing for a new machine.
+- `pitch`: `low-pitched` -> `low-pitch`; `medium-pitched` -> `moderate pitch`; `high-pitched` remains `high-pitched`.
+- `speaking_rate`: `fast speed` -> `fast`; `measured speed` -> `moderate speed`; `slow speed` -> `slowly`.
+- `accent`: rows whose non-unknown accent contains a dash, such as `british-american` or `british-guyanese`, are removed from the dataset.
 
-### 1. Extract Speaker X-Vectors
+## 1. Extract X-Vectors
 
 Run:
 
@@ -115,40 +143,47 @@ Run:
 bash 01_extract_xvectors.sh
 ```
 
-This submits `bin/extract_xvectors.py` for `CommonVoice_dev`, `CommonVoice_test`, `GigaSpeech_test`, `CommonVoice_train`, and `GigaSpeech_train`.
-
-The extractor loads `speechbrain/spkrec-ecapa-voxceleb`, resamples audio to 16 kHz, computes one ECAPA embedding per segment, and writes compressed `.npz` files under:
+This submits `bin/extract_xvectors.py` jobs. The extractor loads `speechbrain/spkrec-ecapa-voxceleb`, resamples audio to 16 kHz, computes one ECAPA embedding per utterance, and writes compressed `.npz` files under:
 
 ```text
-exp/xvectors/ecapa_tdnn/<dataset>/xvectors/<id>.npz
+exp/xvectors/ecapa_tdnn/<dataset>_<split>/xvectors/<id>.npz
 ```
 
-It also writes `xvector.csv`, `failures.csv`, and `extract_args.json`. The downstream training code normalizes x-vectors to unit length and treats them as 192-dimensional targets.
+It also writes extraction metadata such as `xvector.csv`, `failures.csv`, and `extract_args.json`.
 
-### 2. Generate Profile Descriptions and SBERT Embeddings
+## 2. Build Profiles, Descriptions, and SBERT Embeddings
 
-Run:
+Run all stages:
 
 ```bash
 bash 02_get_descriptions.sh
 ```
 
-This script has two jobs. First, `bin/create_GPT_descriptions.py` reads `data/profile_combinations.csv` and writes `data/profile_prompts.csv`. For every valid profile, it asks the OpenAI model for 10 concise natural language descriptions and stores them as `desc0` through `desc9`.
+Or run a single stage:
 
-Second, `bin/get_SBERT_embeddings.py` embeds every description with `sentence-transformers/all-MiniLM-L6-v2` and writes:
-
-```text
-exp/SBERT_embs/<profile_index>/desc0.npz
-exp/SBERT_embs/<profile_index>/desc1.npz
-...
-exp/SBERT_embs/<profile_index>/desc9.npz
+```bash
+bash 02_get_descriptions.sh combinations
+bash 02_get_descriptions.sh merging
+bash 02_get_descriptions.sh unique
+bash 02_get_descriptions.sh prompts
+bash 02_get_descriptions.sh filter
+bash 02_get_descriptions.sh sbert
+bash 02_get_descriptions.sh summary
 ```
 
-Each file stores the SBERT vector, row index, description column, original text, and model name. The MDN uses 384-dimensional SBERT embeddings as inputs.
+Stages:
 
-If you need to rebuild `profile_combinations.csv`, use `bin/find_valid_combinations.py`. It enumerates profile-field combinations, keeps combinations represented in the metadata, removes the all-unknown combination, and writes `data/profile_combinations.csv`.
+- `combinations`: runs `bin/find_valid_combinations.py` per source dataset.
+- `merging`: runs `bin/merge_profile_csvs.py` to merge source profile combinations into `data/Capspeech/`.
+- `unique`: runs `bin/make_unique_profile_combinations.py` to build one-known-field profiles.
+- `prompts`: runs `bin/create_GPT_descriptions.py` for profile prompts and prepends unique prompts to the main prompt table.
+- `filter`: runs `bin/filter_capspeech_profiles.py` to create `data/Capspeech_min100/`.
+- `sbert`: runs `bin/get_SBERT_embeddings.py` on `data/Capspeech_min100/profile_prompts.csv`.
+- `summary`: runs `bin/profiles_summary.py`.
 
-### 3. Precompute Real Profile GMMs
+`bin/make_unique_profile_combinations.py` uses the profile fields `pitch`, `age`, `gender`, `speaking_rate`, `speech_monotony`, and `accent`.
+
+## 3. Precompute Real Profile GMMs
 
 Run:
 
@@ -156,97 +191,169 @@ Run:
 bash 03_precompute_GMMs.sh
 ```
 
-This calls `bin/precompute_GMMs.py` with `K=4`, using all of `CommonVoice_train`. For each fully known profile in `data/profile_combinations.csv`, it finds matching real x-vectors and fits a diagonal-covariance GMM.
+This fits one real-data GMM per Capspeech profile from train-set x-vectors. The script shards `bin/precompute_GMMs.py` jobs, writes profile `.npz` files under `profiles/`, and merges shard metadata into:
+
+```text
+exp/GMMs/<K>_components_precomputed/metadata.csv
+exp/GMMs/<K>_components_precomputed/skipped_profiles.csv
+```
+
+Each profile GMM stores `pi_logits`, `pi`, `mu`, and diagonal `sigma`. Recent precompute/evaluation scripts use the cap rule `max_xvectors_per_profile=100*K` when sweeping K.
+
+## 4. Pretrain the Composed MDN
+
+Run:
+
+```bash
+bash 04_pretrain_MDN.sh
+```
+
+This runs `bin/pretrain.py` with `ComposedGMM_MDN`, `Capspeech_min100`, and profile SBERT embeddings from:
+
+```text
+exp/SBERT_embs/Capspeech_min100
+```
+
+The pretraining objective teaches the model's routing head to select the real profile-GMM component associated with each profile description. Checkpoints are written under `exp/MDN_models/` with names like:
+
+```text
+<K>_components_Capspeech_min100_p=1_pretrain.pt
+```
+
+## 5. Fine-Tune
+
+Run:
+
+```bash
+bash 06_fine_tune_MDN.sh
+```
+
+This runs `bin/finetune.py`, loading a pretrained checkpoint and fine-tuning on per-utterance Capspeech descriptions from `data/Capspeech_min100/train.csv` and `dev.csv`. The current experiments use train fractions such as `0.1` and write checkpoints named like:
+
+```text
+exp/MDN_models/<K>_components_Capspeech_min100_p=0.1_finetune.pt
+```
+
+`bin/finetune.py` prints progress while preparing data: it announces CSV reads, reports how many rows were retained with non-empty descriptions, and logs x-vector matching progress every 100k scanned rows.
+
+## 6. Generate Test/Dev GMMs
+
+Run:
+
+```bash
+bash 07_inference.sh
+```
+
+This calls `bin/inference.py` with `--test-metadata-csv`, generating one GMM per row from a split CSV. The script chooses `capspeech_desc` when present and otherwise falls back to `capspeech_prompt`; `profile_prompts.csv` can provide fallback description text, but the saved GMM metadata fields still come from the split rows. Outputs are written under:
+
+```text
+exp/GMMs/<dataset>_<split>/<K>_components_<dataset>_p=<fraction>_<model>/
+```
+
+`bin/inference.py` now uses tqdm progress bars instead of repeated `Generated x/y files` prints, with descriptions such as `generating test-desc0`.
+
+## 7. Evaluate Precomputed GMM K
+
+Run all stages:
+
+```bash
+bash 08_test_precomputed_GMMs.sh
+```
+
+Or select stages:
+
+```bash
+bash 08_test_precomputed_GMMs.sh --precompute
+bash 08_test_precomputed_GMMs.sh --evaluate
+```
+
+Stage 1 recomputes precomputed real-data GMMs into a separate root:
+
+```text
+exp/GMMs/stage08_precomputed/<K>_components_precomputed/
+```
+
+It loops sequentially over:
+
+```text
+K = 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048
+```
+
+For each K, it keeps profiles with `num_audios >= 2*K`, uses `max_xvectors_per_profile=100*K`, launches shard jobs, waits for that K to finish, merges shard metadata, and only then starts the next K.
+
+Stage 2 runs `bin/test_precomputed_gmms.py` on dev/test x-vectors and writes Best-K tables, plots, and cache files under:
+
+```text
+exp/graphs/Best_K/
+exp/Best_K/
+```
+
+## 8. NLL Scoring and Table
+
+Run all stages:
+
+```bash
+bash 09_compute_NLLs.sh
+```
+
+Or select stages:
+
+```bash
+bash 09_compute_NLLs.sh --pretrain
+bash 09_compute_NLLs.sh --finetune
+bash 09_compute_NLLs.sh --scores
+bash 09_compute_NLLs.sh --random
+bash 09_compute_NLLs.sh --table
+```
+
+Stages:
+
+- Stage 1 generates pretrained MDN GMMs for test `desc0`, test `capspeech_prompt`, dev `desc1`, and dev `capspeech_prompt`.
+- Stage 2 generates the same GMM sets with the finetuned MDN.
+- Stage 3 launches separate `bin/compute_nll_scores.py` jobs for pretrained, pretrained-with-uniform-pi, and finetuned GMMs. For `desc0`/`desc1`, each x-vector is scored against the GMM matching its profile. For `capspeech_prompt`, each x-vector is scored against the GMM generated from that specific prompt row.
+- Stage 4 runs `bin/compute_nll_scores_to_random.py`, scoring real dev/test x-vectors against `N(0,1)` and random K-component GMM baselines.
+- Stage 5 runs `bin/make_nll_table.py`, which tolerates missing CSVs by warning and rendering `NA`, writes `exp/NLL_scores/table.tex`, and copies it to `exp/tables/nll_scores.tex`.
+
+Score CSVs are written under:
+
+```text
+exp/NLL_scores/jobs/
+exp/NLL_scores/random/
+```
+
+`bin/compute_nll_scores.py`, `bin/compute_nll_scores_to_random.py`, and `bin/make_nll_table.py` include tqdm progress bars and status prints for loading, scoring, and table aggregation.
+
+## 9. Characteristic Accuracy Evaluation
+
+Run:
+
+```bash
+bash 10_characteristics_accuracy.sh
+```
+
+This runs one CPU job per characteristic using `bin/characteristics_accuracy.py`, then merges the per-characteristic CSVs with `bin/merge_characteristics_accuracy.py`. The current script evaluates:
+
+```text
+gender, age, accent, speech_monotony, pitch, speaking_rate
+```
+
+Important behavior:
+
+- The classifier is trained on a configurable real x-vector dataset, currently `Capspeech_min100_dev`, and tested on generated samples for `Capspeech_min100_test` GMM metadata.
+- Labels with fewer than `--min-label-xvectors` real x-vectors are skipped before classifier training and generated-label evaluation.
+- Ordinal characteristics can use `--ordinal-classifier-mode`, currently `svr` in the script.
+- Age, pitch, speaking-rate, and speech-monotony labels are ordered semantically in confusion matrices rather than alphabetically.
+- Pitch and speaking-rate aliases are normalized through `bin/utils.py`.
+- The merged outputs are `accuracies.csv` and `results.tex`.
 
 Outputs are written under:
 
 ```text
-exp/GMMs/4_components_precomputed/
+exp/characteristics_prediction/<run_name>_<min_labels>/
+exp/characteristics_prediction/<run_name>_<min_labels>/per_characteristic/
 ```
 
-Important files include `profiles/*.npz`, `metadata.csv`, and `skipped_profiles.csv`. Each GMM file contains `pi_logits`, `pi`, `mu`, and `sigma`.
-
-### 4. Train the MDN Baseline
-
-Run:
-
-```bash
-bash 04_train_MDN.sh
-```
-
-This trains `bin/train.py` with `model-name GaussianMDN`, `K=128`, and a 5 percent subset of `CommonVoice_train`. The model maps SBERT prompt embeddings to an x-vector GMM:
-
-```text
-SBERT description embedding -> MDN -> pi, mu, sigma over x-vector space
-```
-
-The default script uses 100 epochs, batch size 256, hidden layers `1024,2048,2048,1024`, entropy regularization, pi regularization, and AdamW optimization. The best checkpoint by dev negative log-likelihood is saved to:
-
-```text
-exp/MDN_models/128_components_CV=0.05_GS=0.pt
-```
-
-### 5. Train or Fine-Tune the Composed GMM MDN
-
-Run:
-
-```bash
-bash 05_fine_tune_MDN.sh
-```
-
-This trains `bin/train.py` with `model-name ComposedGMM_MDN`, `K=4`, and all of `CommonVoice_train`.
-
-`ComposedGMM_MDN` loads all precomputed profile GMM components from:
-
-```text
-exp/GMMs/4_components_precomputed/
-```
-
-It concatenates those components into one large component bank. The network then learns text-conditioned mixture weights over that bank while the loaded means and variances are frozen by default. This is the central composition mechanism: natural language selects and mixes real profile components in speaker-embedding space.
-
-The checkpoint is saved to:
-
-```text
-exp/MDN_models/4_components_CV=1.pt
-```
-
-### 6. Generate Profile-Conditioned GMMs
-
-Run:
-
-```bash
-bash 06_inference.sh
-```
-
-This calls `bin/inference.py`, loads the trained composed MDN checkpoint, embeds each profile through the reserved `desc0` column, and writes one generated GMM per matching profile.
-
-Outputs are written under:
-
-```text
-exp/GMMs/4_components_CV=1_mixed/
-```
-
-Important files are `profiles/profile_<index>_desc0_gmm.npz` and `metadata.csv`. During inference, low-weight components are pruned and the remaining weights are renormalized.
-
-### 7. Characteristic Accuracy Evaluation
-
-Run:
-
-```bash
-bash 07_characteristics_accuracy.sh
-```
-
-This calls `bin/characteristics_accuracy.py`. For each characteristic, usually `gender`, `age`, and `accent`, it loads real test-set x-vectors, trains a balanced RBF SVM classifier on known labels, samples generated x-vectors from the corresponding generated GMM, and measures whether the classifier predicts the requested label.
-
-Outputs are written under:
-
-```text
-exp/characteristics_prediction/4_components_CV=1/
-```
-
-Important files include `accuracies.csv` and `confusion_<characteristic>.png`.
-
-### 8. Scatter Plots
+## 10. Scatter, KDE, and Histogram Plots
 
 Run:
 
@@ -254,17 +361,18 @@ Run:
 bash 11_scatter_plot.sh
 ```
 
-This calls `bin/plot_profile_gmms.py` for selected age/gender and accent/gender comparisons. It samples from generated GMMs, fits test-set ground-truth GMMs for matching real x-vectors, and projects both distributions with PCA and optionally LDA.
-
-Outputs are written under:
+`11_scatter_plot.sh` uses `bin/plot_profile_gmms.py` for multi-profile scatter/KDE plots. For the active accent comparison, it samples generated GMMs, gathers matching real x-vectors, projects them with LDA when `--lda` is passed, and writes:
 
 ```text
-exp/graphs/4_components_CV=1/scatter/
+exp/graphs/<run_name>/scatter/K=<K>_<profiles>_test.png
+exp/graphs/<run_name>/scatter/K=<K>_<profiles>_test_all_layers.png
 ```
 
-The plots show generated KDEs, test-set KDEs, sampled x-vectors, generated centers, and ground-truth centers.
+The main plot contains four subplots: test-set KDE, generated KDE, all layers, and test-set x-vectors only. The `_all_layers` companion contains only the all-layers subplot and restores the layer legend. Scatter axis labels use `LDA - dimension 1` and `LDA - dimension 2` for LDA plots.
 
-### 9. Log-Likelihood Confusion Matrices
+`bin/plot_gender_histograms.py` is a gender-only helper used for `gender=male,female` with all other requested fields unknown. It treats unknown metadata fields as wildcards when matching generated GMMs, samples a total of `--samples` generated x-vectors from the found GMMs for each gender, and overlays real vs generated histograms on one axis. Real histograms use dotted lines; generated histograms use solid lines; male is plotted in two blues and female in two oranges.
+
+## 11. Log-Likelihood Confusion Matrices
 
 Run:
 
@@ -272,19 +380,17 @@ Run:
 bash 12_confusion_matrices.sh
 ```
 
-This calls `bin/graphs/confusion_matrix.py` for `age`, `gender`, and `accent`. It computes the mean log-likelihood of real x-vectors from each label under generated GMMs for each label.
+This calls `bin/graphs/confusion_matrix.py`. It computes the mean log-likelihood of real x-vectors from each label under generated GMMs for each generated label. The current script runs `age`, `gender`, and `accent` matrices. The age matrix excludes `child`, and label ordering uses the shared semantic ordering from `bin/utils.py`.
 
 Outputs include:
 
 ```text
-exp/graphs/4_components_CV=1/<category>_confusion_matrix.csv
-exp/graphs/4_components_CV=1/<category>_confusion_counts.csv
-exp/graphs/4_components_CV=1/<category>_confusion_matrix.png
+<category>_confusion_matrix.csv
+<category>_confusion_counts.csv
+<category>_confusion_matrix.png
 ```
 
-Rows are real labels and columns are generated profile GMM labels.
-
-### 10. LDA and PCA Histograms
+## 12. LDA/PCA Histograms
 
 Run:
 
@@ -292,66 +398,59 @@ Run:
 bash 13_LDA_histograms.sh
 ```
 
-This calls `bin/graphs/lda_histograms.py`. For each requested profile, it samples generated x-vectors, gathers matching real x-vectors, projects real and generated samples onto one dimension with LDA or PCA, and plots density histograms/KDEs.
-
-The script currently loops over accent-only and gender-only profiles, writing figures under:
+This calls `bin/graphs/lda_histograms.py`. The current active configuration writes PCA histograms for accent-only and gender-only conditions under:
 
 ```text
-exp/graphs/4_components_CV=1/
+exp/graphs/<run_name>/
 ```
 
-## Additional Modules
+The script keeps LDA histogram calls commented for quick switching when needed.
 
-- `bin/model.py`: defines `GaussianMDN`, `LearnablePi_MDN`, and `ComposedGMM_MDN`.
-- `bin/my_dataset.py`: defines PyTorch datasets that match profile prompt embeddings to real x-vectors. `ProfileDataset` samples utterances matching a profile and uses `desc1` through `desc9` for training rows.
-- `bin/test_metrics.py`: computes test-set x-vector log-likelihoods under generated GMMs and writes summary CSVs plus full likelihood lists.
-- `bin/utils.py`: shared GMM, x-vector loading, sampling, normalization, CSV, and condition-matching utilities.
-- `visuals.ipynb`: minimal scratch notebook for plotting/data inspection.
+## Shared Label Ordering and Normalization
 
-## Model Summary
+`bin/utils.py` centralizes label ordering and alias handling used by classifier evaluation and graph scripts.
 
-`GaussianMDN` is the direct baseline. It predicts all GMM parameters from the text embedding:
+Current semantic orders:
 
-```text
-embedding -> pi_logits, mu, sigma
-```
+- Age: `child`, `teenager`, `young adult`, `middle-aged adult`, `elderly`, then decade labels from `teens` through `nineties`.
+- Pitch: `low-pitch`, `moderate pitch`, `high-pitch`.
+- Speaking rate: `slow`, `slightly slowly`, `moderate speed`, `slightly fast`, `fast`.
+- Speech monotony: `monotone`, `slightly expressive and animated`, `expressive and animated`, `very expressive and animated`.
 
-`LearnablePi_MDN` keeps shared learnable means and variances and predicts mixture weights from text.
-
-`ComposedGMM_MDN` loads precomputed profile GMM means and variances from disk and predicts mixture weights over those existing components. This lets generated speaker distributions be assembled from real x-vector profile components while remaining controllable from natural language.
-
-Training minimizes negative log-likelihood of real x-vectors under the predicted GMM. Optional losses include entropy regularization, mean-norm regularization, variance reduction, and pi regularization.
+Unknown labels fall back to sorted order after known labels.
 
 ## Artifact Conventions
 
 Common artifact roots:
 
-- `exp/xvectors/ecapa_tdnn/`: extracted SpeechBrain ECAPA x-vectors
-- `exp/SBERT_embs/`: SBERT embeddings for `desc0` through `desc9`
-- `exp/GMMs/<name>/`: precomputed or generated profile GMMs
-- `exp/MDN_models/`: trained PyTorch checkpoints
-- `exp/characteristics_prediction/`: SVM-based generated-sample accuracy outputs
-- `exp/graphs/`: figures and plotting CSVs
+- `exp/xvectors/ecapa_tdnn/`: extracted SpeechBrain ECAPA x-vectors.
+- `exp/SBERT_embs/`: SBERT embeddings for generated profile descriptions.
+- `exp/GMMs/<name>/`: precomputed or generated profile GMMs.
+- `exp/MDN_models/`: trained PyTorch checkpoints.
+- `exp/characteristics_prediction/`: SVM-based generated-sample accuracy outputs.
+- `exp/graphs/`: figures and plotting CSVs.
+- `exp/NLL_scores/`: NLL score jobs, random-baseline scores, summary CSVs, and `table.tex`.
+- `exp/tables/`: copied LaTeX tables for paper/report use.
 
 GMM `.npz` files use:
 
-- `pi_logits`: log mixture weights
-- `pi`: normalized mixture weights
-- `mu`: component means, shape `[K, xvector_dim]`
-- `sigma`: diagonal component standard deviations, shape `[K, xvector_dim]`
+- `pi_logits`: log mixture weights.
+- `pi`: normalized mixture weights.
+- `mu`: component means, shape `[K, xvector_dim]`.
+- `sigma`: diagonal component standard deviations, shape `[K, xvector_dim]`.
 
-Model checkpoints contain `model_state_dict`, `optimizer_state_dict`, loss metadata, `model_config`, dataset settings, and regularization settings.
+Model checkpoints contain `model_state_dict`, optimizer state when applicable, loss metadata, `model_config`, dataset settings, and regularization settings.
 
 ## Running Without SLURM
 
-The shell scripts use commands like:
+The scripts use commands like:
 
 ```bash
 srun -p gpu --gpus 1 python ...
 srun -p cpu python ...
 ```
 
-On a non-SLURM machine, remove the `srun ...` prefix and run the Python commands directly, adjusting `--device cpu` or `--device cuda` as appropriate.
+On a non-SLURM machine, remove the `srun ...` prefix and run the Python commands directly.
 
 ## Citation
 

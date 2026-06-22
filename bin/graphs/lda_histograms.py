@@ -21,13 +21,13 @@ from utils import (
     DEFAULT_TEST_DATASETS,
     FIELDS,
     condition_mask,
-    find_generated_gmm,
+    generated_gmm_matches,
     load_gmm_metadata,
     load_xvectors,
     normalize_value,
     parse_csv_paths,
     safe_file_stem,
-    sample_gmm,
+    sample_gmm_rows,
 )
 
 
@@ -85,8 +85,13 @@ def build_projection_data(
     rng: np.random.Generator,
 ) -> dict[str, object] | None:
     projection_name = "PCA" if args.pca else "LDA"
-    gmm_row = find_generated_gmm(metadata, condition, strict_unknown_other_fields=True)
-    if gmm_row is None:
+    gmm_rows = generated_gmm_matches(
+        metadata,
+        condition,
+        strict_unknown_other_fields=False,
+        unknown_is_wildcard=True,
+    )
+    if gmm_rows.empty:
         print(f"WARNING: skipping {projection_name} histogram for {condition}: no generated GMM found", flush=True)
         return None
 
@@ -100,8 +105,8 @@ def build_projection_data(
         )
         return None
 
-    gmm_path = Path(str(gmm_row["gmm_path"]))
-    generated = sample_gmm(gmm_path, args.samples, rng)
+    generated, sampled_gmm_rows = sample_gmm_rows(gmm_rows, args.samples, rng)
+    first_gmm_path = Path(str(sampled_gmm_rows.iloc[0]["gmm_path"]))
     x = np.vstack([selected_real, generated])
     y = np.concatenate([np.zeros(len(selected_real), dtype=int), np.ones(len(generated), dtype=int)])
 
@@ -117,7 +122,8 @@ def build_projection_data(
     return {
         "condition": condition,
         "label": profile_label(condition),
-        "gmm_path": gmm_path,
+        "gmm_path": first_gmm_path,
+        "num_generated_gmms": len(gmm_rows),
         "real_projection": projected[: len(selected_real)],
         "generated_projection": projected[len(selected_real) :],
         "num_real": len(selected_real),
@@ -191,7 +197,7 @@ def main() -> int:
         print(f"Profile: {projection['condition']}", flush=True)
         print(f"Real xvectors: {projection['num_real']}", flush=True)
         print(f"Generated xvectors: {projection['num_generated']}", flush=True)
-        print(f"Generated GMM: {projection['gmm_path']}", flush=True)
+        print(f"Generated GMMs: {projection['num_generated_gmms']} matching rows (first: {projection['gmm_path']})", flush=True)
     print(f"Wrote {output_path}", flush=True)
     return 0
 

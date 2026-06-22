@@ -11,6 +11,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import torch
+from tqdm.auto import tqdm
 
 from model import GaussianMDN, LearnablePi_MDN, ComposedGMM_MDN
 
@@ -18,6 +19,7 @@ from model import GaussianMDN, LearnablePi_MDN, ComposedGMM_MDN
 FIELDS = ["pitch", "age", "gender", "speaking_rate", "speech_monotony", "accent"]
 DESC_COLUMNS = [f"desc{i}" for i in range(10)]
 PROFILE_TEXT_COLUMNS = [*DESC_COLUMNS, "capspeech_desc"]
+UNKNOWN_VALUES = {"", "nan", "none", "unknown", "not_computed"}
 DEFAULT_TEST_DATASETS = ["CommonVoice_test", "GigaSpeech_test"]
 
 
@@ -38,6 +40,33 @@ def parse_args() -> argparse.Namespace:
         default="desc0",
         choices=PROFILE_TEXT_COLUMNS,
         help="Description column from --profile-csv-path to use for profile inference.",
+    )
+    parser.add_argument(
+        "--test-metadata-csv",
+        type=Path,
+        default=None,
+        help="If provided, generate one GMM per row in this metadata CSV using --test-desc-column.",
+    )
+    parser.add_argument(
+        "--test-desc-column",
+        default="capspeech_desc",
+        help="Description column to encode when --test-metadata-csv is used.",
+    )
+    parser.add_argument(
+        "--fallback-profile-csv",
+        type=Path,
+        default=None,
+        help="Profile prompts CSV used to fill missing test descriptions with matching desc0.",
+    )
+    parser.add_argument(
+        "--sbert-model",
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        help="SentenceTransformer model used to encode test metadata descriptions.",
+    )
+    parser.add_argument(
+        "--sbert-device",
+        default=None,
+        help="Device for SentenceTransformer test-metadata encoding. Defaults to --device when possible.",
     )
     parser.add_argument(
         "--checkpoint",
@@ -172,6 +201,19 @@ def load_model(
     return model, checkpoint
 
 
+def load_sbert_model(model_name: str, device: str | None):
+    try:
+        from sentence_transformers import SentenceTransformer
+    except ImportError as exc:
+        raise SystemExit("Missing dependency: install sentence-transformers.") from exc
+    return SentenceTransformer(model_name, device=device) if device else SentenceTransformer(model_name)
+
+
+def encode_descriptions(sbert_model, descriptions: list[str]) -> np.ndarray:
+    embeddings = sbert_model.encode(descriptions, convert_to_numpy=True, show_progress_bar=False)
+    return np.asarray(embeddings, dtype=np.float32)
+
+
 def normalize_value(value: Any) -> str:
     if pd.isna(value):
         return "unknown"
@@ -259,6 +301,89 @@ def prune_low_weight_components(
     return kept_pi_logits, kept_pi, mu[keep], sigma[keep]
 
 
+def is_known_text(value: Any) -> bool:
+    return normalize_value(value).lower() not in UNKNOWN_VALUES
+
+
+def profile_condition_key(row: pd.Series) -> tuple[str, ...]:
+    return tuple(normalize_value(row.get(field, "unknown")) for field in FIELDS)
+
+
+def load_profile_desc0_by_condition(profile_csv_path: Path | None) -> dict[tuple[str, ...], str]:
+    if profile_csv_path is None or not profile_csv_path.exists():
+        return {}
+
+    profiles = pd.read_csv(profile_csv_path).fillna("unknown")
+    if "desc0" not in profiles.columns:
+        return {}
+    for field in FIELDS:
+        if field not in profiles.columns:
+            profiles[field] = "unknown"
+        profiles[field] = profiles[field].map(normalize_value)
+
+    desc0_by_condition: dict[tuple[str, ...], str] = {}
+    for _, profile in profiles.iterrows():
+        desc0 = normalize_value(profile.get("desc0", "unknown"))
+        if not is_known_text(desc0):
+            continue
+        key = profile_condition_key(profile)
+        desc0_by_condition.setdefault(key, desc0)
+    return desc0_by_condition
+
+
+def load_test_metadata(
+    test_metadata_csv: Path,
+    desc_column: str,
+    fallback_profile_csv: Path | None,
+) -> pd.DataFrame:
+    metadata = pd.read_csv(test_metadata_csv).fillna("unknown")
+    for field in FIELDS:
+        if field not in metadata.columns:
+            metadata[field] = "unknown"
+        metadata[field] = metadata[field].map(normalize_value)
+
+    if desc_column not in metadata.columns:
+        metadata[desc_column] = ""
+
+    desc0_by_condition = load_profile_desc0_by_condition(fallback_profile_csv)
+    candidate_columns = []
+    for column in [desc_column, "capspeech_desc", "capspeech_prompt"]:
+        if column in metadata.columns and column not in candidate_columns:
+            candidate_columns.append(column)
+
+    descriptions: list[str] = []
+    source_counts = {column: 0 for column in candidate_columns}
+    fallback_count = 0
+    missing_count = 0
+    for _, row in metadata.iterrows():
+        description = ""
+        for column in candidate_columns:
+            value = normalize_value(row.get(column, "unknown"))
+            if is_known_text(value):
+                description = value
+                source_counts[column] += 1
+                break
+        if not description:
+            description = desc0_by_condition.get(profile_condition_key(row), "")
+            if description:
+                fallback_count += 1
+        if not description:
+            missing_count += 1
+        descriptions.append(description)
+
+    metadata[desc_column] = descriptions
+    metadata = metadata.loc[metadata[desc_column].map(is_known_text)].copy()
+    metadata.attrs["description_source_counts"] = source_counts
+    metadata.attrs["fallback_desc0_count"] = fallback_count
+    metadata.attrs["missing_description_count"] = missing_count
+    metadata.attrs["fallback_profile_csv"] = str(fallback_profile_csv) if fallback_profile_csv else ""
+    return metadata
+
+
+def test_gmm_id(row_idx: int) -> str:
+    return str(row_idx)
+
+
 def write_metadata(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
@@ -280,64 +405,139 @@ def write_metadata(path: Path, rows: list[dict[str, Any]]) -> None:
     tmp_path.replace(path)
 
 
+def progress_description(args: argparse.Namespace, desc_column: str) -> str:
+    if args.test_metadata_csv is not None:
+        split_name = args.test_metadata_csv.stem
+    else:
+        split_name = "profiles"
+    return f"generating {split_name}-{desc_column}"
+
+
 def main() -> int:
     args = parse_args()
 
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-    resolve_profile_paths(args)
     device = resolve_device(args.device)
     checkpoint_path = args.checkpoint or latest_checkpoint(args.checkpoint_dir)
     model, checkpoint = load_model(checkpoint_path, device, args.model_name, args.gmm_init_path)
 
-    desc_column = args.test_on_profile
-    profiles = load_profiles(args.profile_csv_path, desc_column)
-    if args.limit is not None:
-        profiles = profiles.head(args.limit)
-    desc_num = int(desc_column.removeprefix("desc")) if desc_column in DESC_COLUMNS else None
     metadata_rows: list[dict[str, Any]] = []
     pending: list[tuple[dict[str, Any], Path, np.ndarray]] = []
 
     print(f"Loaded checkpoint {checkpoint_path}", flush=True)
     print(f"Checkpoint epoch={checkpoint.get('epoch')} dev_loss={checkpoint.get('dev_loss')}", flush=True)
-    print(f"Loaded {len(profiles)} profiles from {args.profile_csv_path}", flush=True)
-    print(f"Using profile description column {desc_column}", flush=True)
-    print(f"Generating one GMM per profile into {args.output_dir}", flush=True)
-    missing_embs=0
-    for row_idx, profile_row in profiles.iterrows():
-        profile_index = int(row_idx)
-        emb_path = sbert_path(args.sbert_root, profile_index, desc_column)
-        if not emb_path.exists():
-            missing_embs+=1
-            continue
-            raise FileNotFoundError(f"Missing SBERT embedding: {emb_path}")
 
-        embedding = load_sbert_embedding(emb_path)
-        properties = {field: str(profile_row[field]) for field in FIELDS}
-        description = str(profile_row[desc_column])
-        gmm_id = profile_file_stem(profile_index, profile_row, FIELDS, desc_column)
-        generated_path = generated_profile_path(args.output_dir, gmm_id)
-        metadata = {
-            "gmm_id": gmm_id,
-            "profile_index": profile_index,
-            "desc_column": desc_column,
-            "desc_num": desc_num,
-            "description": description,
-            "gmm_path": str(generated_path),
-            "sbert_path": str(emb_path),
-            "checkpoint_path": str(checkpoint_path),
-            **properties,
-        }
-        metadata_rows.append(metadata)
+    if args.test_metadata_csv is not None:
+        desc_column = args.test_desc_column
+        fallback_profile_csv = args.fallback_profile_csv
+        if fallback_profile_csv is None and args.dataset_name is not None:
+            fallback_profile_csv = Path("data") / args.dataset_name / "profile_prompts.csv"
+        test_rows = load_test_metadata(args.test_metadata_csv, desc_column, fallback_profile_csv)
+        if args.limit is not None:
+            test_rows = test_rows.head(args.limit)
+        desc_num = None
+        sbert_device = args.sbert_device or ("cuda" if device.type == "cuda" else "cpu")
+        sbert_model = load_sbert_model(args.sbert_model, sbert_device)
+        print(f"Loaded {len(test_rows)} test metadata rows from {args.test_metadata_csv}", flush=True)
+        source_counts = test_rows.attrs.get("description_source_counts", {})
+        print(
+            "Description sources: "
+            f"{desc_column}={source_counts.get(desc_column, 0)}, "
+            f"capspeech_desc={source_counts.get('capspeech_desc', 0)}, "
+            f"capspeech_prompt={source_counts.get('capspeech_prompt', 0)}, "
+            f"profile_desc0={test_rows.attrs.get('fallback_desc0_count', 0)}",
+            flush=True,
+        )
+        print(
+            f"Filled {test_rows.attrs.get('fallback_desc0_count', 0)} missing descriptions "
+            f"from matching profile desc0 in {test_rows.attrs.get('fallback_profile_csv', '')}",
+            flush=True,
+        )
+        if test_rows.attrs.get("missing_description_count", 0):
+            print(
+                f"Skipped {test_rows.attrs['missing_description_count']} test rows with no usable description",
+                flush=True,
+            )
+        print(f"Encoding test descriptions from column {desc_column} with {args.sbert_model}", flush=True)
+        print(f"Generating one GMM per test row into {args.output_dir}", flush=True)
 
-        if not generated_path.exists() or args.overwrite:
-            pending.append((metadata, generated_path, embedding))
+        for start in range(0, len(test_rows), args.batch_size):
+            batch_rows = test_rows.iloc[start : start + args.batch_size]
+            descriptions = batch_rows[desc_column].astype(str).tolist()
+            embeddings = encode_descriptions(sbert_model, descriptions)
+            for offset, (row_idx, test_row) in enumerate(batch_rows.iterrows()):
+                profile_index = int(row_idx)
+                gmm_id = test_gmm_id(profile_index)
+                generated_path = generated_profile_path(args.output_dir, gmm_id)
+                properties = {field: str(test_row[field]) for field in FIELDS}
+                metadata = {
+                    "gmm_id": gmm_id,
+                    "profile_index": profile_index,
+                    "desc_column": desc_column,
+                    "desc_num": desc_num,
+                    "description": str(test_row[desc_column]),
+                    "gmm_path": str(generated_path),
+                    "sbert_path": "",
+                    "checkpoint_path": str(checkpoint_path),
+                    **properties,
+                }
+                metadata_rows.append(metadata)
+                if not generated_path.exists() or args.overwrite:
+                    pending.append((metadata, generated_path, embeddings[offset]))
+            print(f"Prepared {min(start + len(batch_rows), len(test_rows))}/{len(test_rows)} test rows", flush=True)
+    else:
+        resolve_profile_paths(args)
+        desc_column = args.test_on_profile
+        profiles = load_profiles(args.profile_csv_path, desc_column)
+        if args.limit is not None:
+            profiles = profiles.head(args.limit)
+        desc_num = int(desc_column.removeprefix("desc")) if desc_column in DESC_COLUMNS else None
 
-        if len(metadata_rows) % 1000 == 0:
-            print(f"Prepared {len(metadata_rows)}/{len(profiles)} profiles", flush=True)
+        print(f"Loaded {len(profiles)} profiles from {args.profile_csv_path}", flush=True)
+        print(f"Using profile description column {desc_column}", flush=True)
+        print(f"Generating one GMM per profile into {args.output_dir}", flush=True)
+        missing_embs=0
+        for row_idx, profile_row in profiles.iterrows():
+            profile_index = int(row_idx)
+            emb_path = sbert_path(args.sbert_root, profile_index, desc_column)
+            if not emb_path.exists():
+                missing_embs+=1
+                continue
 
-    print(f"Need to generate {len(pending)} new files; metadata rows={len(metadata_rows)}, missing SBERT embeddings={missing_embs}", flush=True)
+            embedding = load_sbert_embedding(emb_path)
+            properties = {field: str(profile_row[field]) for field in FIELDS}
+            description = str(profile_row[desc_column])
+            gmm_id = profile_file_stem(profile_index, profile_row, FIELDS, desc_column)
+            generated_path = generated_profile_path(args.output_dir, gmm_id)
+            metadata = {
+                "gmm_id": gmm_id,
+                "profile_index": profile_index,
+                "desc_column": desc_column,
+                "desc_num": desc_num,
+                "description": description,
+                "gmm_path": str(generated_path),
+                "sbert_path": str(emb_path),
+                "checkpoint_path": str(checkpoint_path),
+                **properties,
+            }
+            metadata_rows.append(metadata)
 
+            if not generated_path.exists() or args.overwrite:
+                pending.append((metadata, generated_path, embedding))
+
+            if len(metadata_rows) % 1000 == 0:
+                print(f"Prepared {len(metadata_rows)}/{len(profiles)} profiles", flush=True)
+
+        print(f"Missing SBERT embeddings={missing_embs}", flush=True)
+
+    print(f"Need to generate {len(pending)} new files; metadata rows={len(metadata_rows)}", flush=True)
+
+    progress = tqdm(
+        total=len(pending),
+        desc=progress_description(args, desc_column),
+        unit="file",
+    )
     for start in range(0, len(pending), args.batch_size):
         batch = pending[start : start + args.batch_size]
         embeddings = torch.from_numpy(np.stack([item[2] for item in batch])).float().to(device)
@@ -365,8 +565,8 @@ def main() -> int:
                 sigma=kept_sigma,
             )
 
-        processed = min(start + len(batch), len(pending))
-        print(f"Generated {processed}/{len(pending)} files", flush=True)
+        progress.update(len(batch))
+    progress.close()
 
     metadata_path = args.output_dir / "metadata.csv"
     write_metadata(metadata_path, metadata_rows)

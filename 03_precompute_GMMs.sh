@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-K=4
-num_shards=5 # no more than 10 cpu jobs available currently on the grid
+K=256
+num_shards=10
+num_workers=16
 output_dir="exp/GMMs/${K}_components_precomputed"
 job_group_id="GMM"
 dataset_name="Capspeech_min100"
@@ -12,18 +13,18 @@ echo "Using job name prefix ${job_group_id}"
 
 for ((shard = 0; shard < num_shards; shard++)); do
   shard_job_name="${job_group_id}_$((shard + 1))"
-  srun -p cpu -c $num_shards --job-name "$shard_job_name" python bin/precompute_GMMs.py \
+  srun -p cpu -c $num_workers --job-name "$shard_job_name" python bin/precompute_GMMs.py \
     --train-csv-paths "data/${dataset_name}/train.csv" \
     --data-root data \
     --xvector-root exp/xvectors/ecapa_tdnn \
-    --profile-combinations-csv data/${dataset_name}/profile_combinations.csv \
+    --profile-combinations-csv data/${dataset_name}/profile_prompts.csv \
     --output-dir "$output_dir" \
     --K ${K} \
-    --num-load-workers "$num_shards" \
-    --num-profile-workers "$num_shards" \
+    --num-load-workers "$num_workers" \
+    --num-profile-workers "$num_workers" \
     --num-shards "$num_shards" \
     --shard-index "$shard" \
-    --max-xvectors-per-profile 1000 \
+    --max-xvectors-per-profile 3500 \
     "$@" &
     
     sleep 1

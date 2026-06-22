@@ -18,7 +18,7 @@ import seaborn as sns
 from utils import (
     DEFAULT_TEST_DATASETS,
     FIELDS,
-    find_generated_gmm,
+    generated_gmm_matches,
     gmm_log_likelihood,
     load_gmm,
     load_gmm_metadata,
@@ -75,28 +75,42 @@ def main() -> int:
             flush=True,
         )
 
-    gmm_rows = []
+    gmm_rows_by_label = {}
     gmm_labels = []
     for label in real_labels:
-        gmm_row = find_generated_gmm(metadata, {args.category: label})
-        if gmm_row is None:
-            print(f"Skipping generated column {label}: no all-unknown GMM found", flush=True)
+        matches = generated_gmm_matches(
+            metadata,
+            {args.category: label},
+            strict_unknown_other_fields=False,
+            unknown_is_wildcard=True,
+        )
+        if matches.empty:
+            print(f"Skipping generated column {label}: no matching GMM found", flush=True)
             continue
+        print(f"Generated column {label}: using {len(matches)} matching GMMs", flush=True)
         gmm_labels.append(label)
-        gmm_rows.append(gmm_row)
+        gmm_rows_by_label[label] = matches
 
     real_labels = [label for label in real_labels if label in set(gmm_labels)]
-    if not real_labels or not gmm_rows:
+    if not real_labels or not gmm_rows_by_label:
         raise ValueError(f"No matrix labels available for {args.category} with n_min={args.n_min}")
 
     matrix = np.empty((len(real_labels), len(gmm_labels)), dtype=np.float64)
     counts = np.empty(len(real_labels), dtype=np.int64)
+    gmm_counts = {label: int(len(gmm_rows_by_label[label])) for label in gmm_labels}
+    loaded_gmms = {
+        label: [load_gmm(Path(str(row["gmm_path"]))) for _, row in gmm_rows_by_label[label].iterrows()]
+        for label in gmm_labels
+    }
     for row_idx, real_label in enumerate(real_labels):
         selected = xvectors[category_values == real_label]
         counts[row_idx] = len(selected)
-        for col_idx, gmm_row in enumerate(gmm_rows):
-            _pi_logits, pi, mu, sigma = load_gmm(Path(str(gmm_row["gmm_path"])))
-            matrix[row_idx, col_idx] = float(np.mean(gmm_log_likelihood(selected, pi, mu, sigma)))
+        for col_idx, gmm_label in enumerate(gmm_labels):
+            scores = [
+                float(np.mean(gmm_log_likelihood(selected, pi, mu, sigma)))
+                for _pi_logits, pi, mu, sigma in loaded_gmms[gmm_label]
+            ]
+            matrix[row_idx, col_idx] = float(np.mean(scores))
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     csv_path = args.output_dir / f"{args.category}_confusion_matrix.csv"
@@ -110,7 +124,13 @@ def main() -> int:
     ]
 
     counts_path = args.output_dir / f"{args.category}_confusion_counts.csv"
-    pd.DataFrame({"real_label": real_labels, "num_xvectors": counts}).to_csv(counts_path, index=False)
+    pd.DataFrame(
+        {
+            "real_label": real_labels,
+            "num_xvectors": counts,
+            "num_matching_generated_gmms": [gmm_counts[label] for label in real_labels],
+        }
+    ).to_csv(counts_path, index=False)
 
     png_path = args.output_dir / f"{args.category}_confusion_matrix.png"
     sns.set_theme(style="white", context="notebook")
@@ -131,7 +151,7 @@ def main() -> int:
         cbar_kws={"label": f"Mean LL, centered at matrix mean ({center:.1f})"},
         ax=ax,
     )
-    ax.set_xlabel(f"Generated {args.category} GMM")
+    ax.set_xlabel(f"Generated {args.category} GMM group")
     ax.set_ylabel(f"Real {args.category} xvectors")
     ax.set_title(f"Mean log-likelihood by {args.category}")
     fig.tight_layout()
