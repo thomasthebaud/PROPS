@@ -11,7 +11,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC, SVR
@@ -135,6 +135,52 @@ def macro_accuracy(
     return value
 
 
+def label_correlation(
+    characteristic: str,
+    labels: list[str],
+    true_labels: list[str] | np.ndarray,
+    predicted_labels: list[str] | np.ndarray,
+) -> float | None:
+    if len(true_labels) < 2:
+        return None
+    label_to_rank, _ = label_rank_maps(characteristic, labels)
+    try:
+        true_ranks = np.asarray([label_to_rank[str(label)] for label in true_labels], dtype=np.float64)
+        predicted_ranks = np.asarray([label_to_rank[str(label)] for label in predicted_labels], dtype=np.float64)
+    except KeyError:
+        return None
+    if np.std(true_ranks) == 0.0 or np.std(predicted_ranks) == 0.0:
+        return None
+    correlation = float(np.corrcoef(true_ranks, predicted_ranks)[0, 1])
+    if np.isnan(correlation):
+        return None
+    return correlation
+
+
+def classification_metrics(
+    characteristic: str,
+    labels: list[str],
+    true_labels: list[str] | np.ndarray,
+    predicted_labels: list[str] | np.ndarray,
+    correlation_labels: list[str] | None = None,
+) -> dict[str, float | None]:
+    if len(true_labels) == 0:
+        return {
+            "micro_accuracy": None,
+            "macro_accuracy": None,
+            "correlation": None,
+            "micro_f1": None,
+            "macro_f1": None,
+        }
+    return {
+        "micro_accuracy": float(accuracy_score(true_labels, predicted_labels)),
+        "macro_accuracy": macro_accuracy(labels, true_labels, predicted_labels),
+        "correlation": label_correlation(characteristic, correlation_labels or labels, true_labels, predicted_labels),
+        "micro_f1": float(f1_score(true_labels, predicted_labels, labels=labels, average="micro", zero_division=0)),
+        "macro_f1": float(f1_score(true_labels, predicted_labels, labels=labels, average="macro", zero_division=0)),
+    }
+
+
 def draw_confusion_panel(
     ax,
     labels: list[str],
@@ -249,6 +295,12 @@ def format_accuracy(value: float | None) -> str:
     return f"{100.0 * value:.1f}"
 
 
+def format_correlation(value: float | None) -> str:
+    if value is None or np.isnan(value):
+        return "--"
+    return f"{value:.3f}"
+
+
 def display_characteristic_name(value: object) -> str:
     return str(value).replace("_", " ").title()
 
@@ -256,9 +308,9 @@ def display_characteristic_name(value: object) -> str:
 def write_latex_results(path: Path, rows: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
-        '\\\\begin{tabular}{lrrr}',
+        '\\\\begin{tabular}{lrrrrrrrrrrr}',
         '\\\\hline',
-        'Characteristic & Real & Generated & Number of classes \\\\',
+        'Characteristic & Real micro acc. & Real macro acc. & Generated micro acc. & Generated macro acc. & Real corr. & Generated corr. & Real micro F1 & Real macro F1 & Generated micro F1 & Generated macro F1 & Number of classes \\\\',
         '\\\\hline',
     ]
     for row in rows:
@@ -266,8 +318,16 @@ def write_latex_results(path: Path, rows: list[dict[str, object]]) -> None:
             " & ".join(
                 [
                     latex_escape(display_characteristic_name(row["characteristic"])),
-                    format_accuracy(row["real_test_accuracy"]),
-                    format_accuracy(row["generated_accuracy"]),
+                    format_accuracy(row.get("real_test_micro_accuracy")),
+                    format_accuracy(row.get("real_test_macro_accuracy")),
+                    format_accuracy(row.get("generated_micro_accuracy")),
+                    format_accuracy(row.get("generated_macro_accuracy")),
+                    format_correlation(row.get("real_test_correlation")),
+                    format_correlation(row.get("generated_correlation")),
+                    format_accuracy(row.get("real_test_micro_f1")),
+                    format_accuracy(row.get("real_test_macro_f1")),
+                    format_accuracy(row.get("generated_micro_f1")),
+                    format_accuracy(row.get("generated_macro_f1")),
                     str(row.get("num_classes", "")),
                 ]
             )
@@ -294,6 +354,12 @@ def parse_args() -> argparse.Namespace:
         help="Classifier to use for ordinal characteristics: fused SVR+SVC, SVC only, or SVR only.",
     )
     parser.add_argument(
+        "--svc-c",
+        type=float,
+        default=1.0,
+        help="Regularization parameter C for SVC classifiers.",
+    )
+    parser.add_argument(
         "--max-train-vectors",
         type=int,
         default=10000,
@@ -318,6 +384,8 @@ def main() -> int:
         raise ValueError("--max-train-vectors must be positive")
     if args.min_label_xvectors <= 0:
         raise ValueError("--min-label-xvectors must be positive")
+    if args.svc_c <= 0:
+        raise ValueError("--svc-c must be positive")
 
     unknown_characteristics = [item for item in args.characteristics if item not in FIELDS]
     if unknown_characteristics:
@@ -406,14 +474,14 @@ def main() -> int:
             if args.ordinal_classifier_mode in {"fusion", "svr"}:
                 svr_classifier = make_pipeline(
                     StandardScaler(),
-                    SVR(kernel="rbf", gamma="scale"),
+                    SVR(kernel="rbf", gamma="scale", C=args.svc_c),
                 )
                 train_targets = ordinal_targets(train_labels, label_to_rank)
                 svr_classifier.fit(train_xvectors[train_indices], train_targets, svr__sample_weight=sample_weights)
             if args.ordinal_classifier_mode in {"fusion", "svc"}:
                 svc_classifier = make_pipeline(
                     StandardScaler(),
-                    SVC(kernel="rbf", gamma="scale"),
+                    SVC(kernel="rbf", gamma="scale", C=args.svc_c),
                 )
                 svc_classifier.fit(train_xvectors[train_indices], train_labels, svc__sample_weight=sample_weights)
             train_predictions = predict_ordinal_by_mode(
@@ -428,7 +496,7 @@ def main() -> int:
         else:
             classifier = make_pipeline(
                 StandardScaler(),
-                SVC(kernel="rbf", gamma="scale"),
+                SVC(kernel="rbf", gamma="scale", C=args.svc_c),
             )
             classifier.fit(train_xvectors[train_indices], train_labels, svc__sample_weight=sample_weights)
             train_predictions = classifier.predict(train_xvectors[train_indices])
@@ -443,6 +511,13 @@ def main() -> int:
 
         test_mask = np.isin(test_labels, known_labels)
         real_test_accuracy = None
+        real_test_metrics = {
+            "micro_accuracy": None,
+            "macro_accuracy": None,
+            "correlation": None,
+            "micro_f1": None,
+            "macro_f1": None,
+        }
         real_test_true_labels = test_labels[test_mask]
         real_test_predictions: np.ndarray = np.array([], dtype=str)
         real_test_num_xvectors = int(np.sum(test_mask))
@@ -458,14 +533,23 @@ def main() -> int:
                 )
             else:
                 real_test_predictions = classifier.predict(test_xvectors[test_mask])
-            real_test_accuracy = macro_accuracy(known_labels, real_test_true_labels, real_test_predictions)
+            real_test_metrics = classification_metrics(
+                characteristic,
+                known_labels,
+                real_test_true_labels,
+                real_test_predictions,
+            )
+            real_test_accuracy = real_test_metrics["macro_accuracy"]
             real_test_label_accuracies = {
                 label: float(np.mean(real_test_predictions[real_test_true_labels == label] == label))
                 for label in known_labels
                 if np.any(real_test_true_labels == label)
             }
             print(
-                f"{characteristic}: real test macro accuracy={real_test_accuracy:.4f} "
+                f"{characteristic}: real test micro accuracy={real_test_metrics['micro_accuracy']:.4f} "
+                f"macro accuracy={real_test_metrics['macro_accuracy']:.4f} "
+                f"correlation={real_test_metrics['correlation'] if real_test_metrics['correlation'] is not None else 'n/a'} "
+                f"micro_f1={real_test_metrics['micro_f1']:.4f} macro_f1={real_test_metrics['macro_f1']:.4f} "
                 f"from per-label accuracies={real_test_label_accuracies}",
                 flush=True,
             )
@@ -524,6 +608,11 @@ def main() -> int:
                     "total_num_classifier_train_xvectors": total_num_classifier_train_xvectors,
                     "classifier_train_accuracy": train_accuracy,
                     "real_test_accuracy": real_test_accuracy if real_test_accuracy is not None else "",
+                    "real_test_micro_accuracy": real_test_metrics["micro_accuracy"] if real_test_metrics["micro_accuracy"] is not None else "",
+                    "real_test_macro_accuracy": real_test_metrics["macro_accuracy"] if real_test_metrics["macro_accuracy"] is not None else "",
+                    "real_test_correlation": real_test_metrics["correlation"] if real_test_metrics["correlation"] is not None else "",
+                    "real_test_micro_f1": real_test_metrics["micro_f1"] if real_test_metrics["micro_f1"] is not None else "",
+                    "real_test_macro_f1": real_test_metrics["macro_f1"] if real_test_metrics["macro_f1"] is not None else "",
                     "real_test_num_xvectors": real_test_num_xvectors,
                     "gmm_id": gmm_id,
                     "gmm_path": str(gmm_path),
@@ -536,11 +625,14 @@ def main() -> int:
                 for label in known_labels
                 if any(true_label == label for true_label in confusion_true_labels)
             ]
-            overall_accuracy = macro_accuracy(
+            generated_metrics = classification_metrics(
+                characteristic,
                 generated_labels,
                 confusion_true_labels,
                 confusion_predicted_labels,
+                correlation_labels=known_labels,
             )
+            overall_accuracy = generated_metrics["macro_accuracy"]
             generated_label_accuracies = {
                 label: float(
                     np.mean(
@@ -560,6 +652,16 @@ def main() -> int:
                     "total_num_classifier_train_xvectors": total_num_classifier_train_xvectors,
                     "classifier_train_accuracy": train_accuracy,
                     "real_test_accuracy": real_test_accuracy if real_test_accuracy is not None else "",
+                    "real_test_micro_accuracy": real_test_metrics["micro_accuracy"] if real_test_metrics["micro_accuracy"] is not None else "",
+                    "real_test_macro_accuracy": real_test_metrics["macro_accuracy"] if real_test_metrics["macro_accuracy"] is not None else "",
+                    "real_test_correlation": real_test_metrics["correlation"] if real_test_metrics["correlation"] is not None else "",
+                    "real_test_micro_f1": real_test_metrics["micro_f1"] if real_test_metrics["micro_f1"] is not None else "",
+                    "real_test_macro_f1": real_test_metrics["macro_f1"] if real_test_metrics["macro_f1"] is not None else "",
+                    "generated_micro_accuracy": generated_metrics["micro_accuracy"] if generated_metrics["micro_accuracy"] is not None else "",
+                    "generated_macro_accuracy": generated_metrics["macro_accuracy"] if generated_metrics["macro_accuracy"] is not None else "",
+                    "generated_correlation": generated_metrics["correlation"] if generated_metrics["correlation"] is not None else "",
+                    "generated_micro_f1": generated_metrics["micro_f1"] if generated_metrics["micro_f1"] is not None else "",
+                    "generated_macro_f1": generated_metrics["macro_f1"] if generated_metrics["macro_f1"] is not None else "",
                     "real_test_num_xvectors": real_test_num_xvectors,
                     "gmm_id": "",
                     "gmm_path": "",
@@ -571,13 +673,26 @@ def main() -> int:
                     "classifier_train_accuracy": train_accuracy,
                     "real_test_accuracy": real_test_accuracy,
                     "generated_accuracy": overall_accuracy,
+                    "real_test_micro_accuracy": real_test_metrics["micro_accuracy"],
+                    "real_test_macro_accuracy": real_test_metrics["macro_accuracy"],
+                    "generated_micro_accuracy": generated_metrics["micro_accuracy"],
+                    "generated_macro_accuracy": generated_metrics["macro_accuracy"],
+                    "real_test_correlation": real_test_metrics["correlation"],
+                    "generated_correlation": generated_metrics["correlation"],
+                    "real_test_micro_f1": real_test_metrics["micro_f1"],
+                    "real_test_macro_f1": real_test_metrics["macro_f1"],
+                    "generated_micro_f1": generated_metrics["micro_f1"],
+                    "generated_macro_f1": generated_metrics["macro_f1"],
                     "total_num_classifier_train_xvectors": total_num_classifier_train_xvectors,
                     "real_test_num_xvectors": real_test_num_xvectors,
                     "num_classes": len(known_labels),
                 }
             )
             print(
-                f"{characteristic}: overall generated macro accuracy={overall_accuracy:.4f} "
+                f"{characteristic}: overall generated micro accuracy={generated_metrics['micro_accuracy']:.4f} "
+                f"macro accuracy={generated_metrics['macro_accuracy']:.4f} "
+                f"correlation={generated_metrics['correlation'] if generated_metrics['correlation'] is not None else 'n/a'} "
+                f"micro_f1={generated_metrics['micro_f1']:.4f} macro_f1={generated_metrics['macro_f1']:.4f} "
                 f"from per-label accuracies={generated_label_accuracies}",
                 flush=True,
             )
@@ -595,12 +710,26 @@ def main() -> int:
             print(f"Wrote confusion matrix to {confusion_path}", flush=True)
 
     if latex_rows:
-        real_test_accuracies = [row["real_test_accuracy"] for row in latex_rows if row["real_test_accuracy"] is not None]
-        generated_accuracies = [row["generated_accuracy"] for row in latex_rows if row["generated_accuracy"] is not None]
         train_accuracies = [row["classifier_train_accuracy"] for row in latex_rows if row["classifier_train_accuracy"] is not None]
-        average_real_test_accuracy = float(np.mean(real_test_accuracies)) if real_test_accuracies else None
-        average_generated_accuracy = float(np.mean(generated_accuracies)) if generated_accuracies else None
         average_train_accuracy = float(np.mean(train_accuracies)) if train_accuracies else None
+        average_metrics = {
+            key: (float(np.mean(values)) if values else None)
+            for key in (
+                "real_test_micro_accuracy",
+                "real_test_macro_accuracy",
+                "generated_micro_accuracy",
+                "generated_macro_accuracy",
+                "real_test_correlation",
+                "generated_correlation",
+                "real_test_micro_f1",
+                "real_test_macro_f1",
+                "generated_micro_f1",
+                "generated_macro_f1",
+            )
+            for values in [[row[key] for row in latex_rows if row.get(key) is not None]]
+        }
+        average_real_test_accuracy = average_metrics["real_test_macro_accuracy"]
+        average_generated_accuracy = average_metrics["generated_macro_accuracy"]
         rows.append(
             {
                 "characteristic": "average",
@@ -611,7 +740,17 @@ def main() -> int:
                 "num_classifier_train_xvectors": "",
                 "total_num_classifier_train_xvectors": "",
                 "classifier_train_accuracy": average_train_accuracy,
-                "real_test_accuracy": average_real_test_accuracy,
+                "real_test_accuracy": average_real_test_accuracy if average_real_test_accuracy is not None else "",
+                "real_test_micro_accuracy": average_metrics["real_test_micro_accuracy"] if average_metrics["real_test_micro_accuracy"] is not None else "",
+                "real_test_macro_accuracy": average_metrics["real_test_macro_accuracy"] if average_metrics["real_test_macro_accuracy"] is not None else "",
+                "generated_micro_accuracy": average_metrics["generated_micro_accuracy"] if average_metrics["generated_micro_accuracy"] is not None else "",
+                "generated_macro_accuracy": average_metrics["generated_macro_accuracy"] if average_metrics["generated_macro_accuracy"] is not None else "",
+                "real_test_correlation": average_metrics["real_test_correlation"] if average_metrics["real_test_correlation"] is not None else "",
+                "generated_correlation": average_metrics["generated_correlation"] if average_metrics["generated_correlation"] is not None else "",
+                "real_test_micro_f1": average_metrics["real_test_micro_f1"] if average_metrics["real_test_micro_f1"] is not None else "",
+                "real_test_macro_f1": average_metrics["real_test_macro_f1"] if average_metrics["real_test_macro_f1"] is not None else "",
+                "generated_micro_f1": average_metrics["generated_micro_f1"] if average_metrics["generated_micro_f1"] is not None else "",
+                "generated_macro_f1": average_metrics["generated_macro_f1"] if average_metrics["generated_macro_f1"] is not None else "",
                 "real_test_num_xvectors": "",
                 "gmm_id": "",
                 "gmm_path": "",
@@ -631,6 +770,16 @@ def main() -> int:
             "total_num_classifier_train_xvectors",
             "classifier_train_accuracy",
             "real_test_accuracy",
+            "real_test_micro_accuracy",
+            "real_test_macro_accuracy",
+            "generated_micro_accuracy",
+            "generated_macro_accuracy",
+            "real_test_correlation",
+            "generated_correlation",
+            "real_test_micro_f1",
+            "real_test_macro_f1",
+            "generated_micro_f1",
+            "generated_macro_f1",
             "real_test_num_xvectors",
             "gmm_id",
             "gmm_path",

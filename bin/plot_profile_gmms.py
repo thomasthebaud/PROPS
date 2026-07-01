@@ -31,6 +31,7 @@ from utils import (
 
 PLOT_FIELDS = ["gender", "age", "accent"]
 DEFAULT_OUTPUT = Path("graphs/GMMs_visuals/age_gender_accent.png")
+FONT_SIZE = 15
 
 
 def parse_test_csv_paths(value: str) -> list[tuple[str, float | None]]:
@@ -119,9 +120,15 @@ def requested_conditions(args: argparse.Namespace) -> list[pd.Series]:
     return conditions
 
 
+def display_condition_value(field: str, value: str) -> str:
+    if field == "accent":
+        return value.title()
+    return value
+
+
 def condition_label(condition: pd.Series) -> str:
     known = [
-        normalize_value(condition[field])
+        display_condition_value(field, normalize_value(condition[field]))
         for field in PLOT_FIELDS
         if normalize_value(condition[field]) != "unknown"
     ]
@@ -321,9 +328,9 @@ def render_panel(
     xmin, xmax, ymin, ymax = limits
     ax.set_xlim(xmin, xmax)
     ax.set_ylim(ymin, ymax)
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
+    ax.set_title(title, fontsize=FONT_SIZE)
+    ax.set_xlabel(x_label, fontsize=FONT_SIZE)
+    ax.set_ylabel(y_label, fontsize=FONT_SIZE)
     ax.grid(True, alpha=0.25)
 
 
@@ -364,7 +371,7 @@ def render_distribution_plot(
         axes[1, 0],
         projected_profiles,
         palette,
-        "All layers",
+        "LDA accent distributions",
         limits,
         x_label,
         y_label,
@@ -394,6 +401,8 @@ def render_distribution_plot(
         ncol=max(1, len(profile_handles)),
         frameon=True,
         title="Profiles",
+        fontsize=FONT_SIZE,
+        title_fontsize=FONT_SIZE,
     )
     fig.tight_layout(rect=(0, 0.09, 1, 1))
 
@@ -423,7 +432,7 @@ def render_all_layers_plot(
         ax,
         projected_profiles,
         palette,
-        "All layers",
+        "LDA of the generated and real x-vectors for various accents",
         limits,
         x_label,
         y_label,
@@ -441,7 +450,13 @@ def render_all_layers_plot(
         Patch(facecolor="black", alpha=0.20, label="Generated KDE"),
         Line2D([0], [0], marker=".", linestyle="None", color="black", markersize=9, label="Test-set x-vectors"),
     ]
-    layer_legend = ax.legend(handles=layer_handles, loc="upper right", frameon=True, title="Layers")
+    layer_legend = ax.legend(
+        handles=layer_handles, 
+        loc="upper right", 
+        frameon=True, 
+        title="Layers",
+        fontsize=FONT_SIZE,
+        title_fontsize=FONT_SIZE)
     ax.add_artist(layer_legend)
     ax.legend(
         handles=profile_handles,
@@ -449,7 +464,10 @@ def render_all_layers_plot(
         ncol=1,
         frameon=True,
         title="Profiles",
+        fontsize=FONT_SIZE,
+        title_fontsize=FONT_SIZE,
     )
+
     fig.tight_layout()
 
     all_layers_path.parent.mkdir(parents=True, exist_ok=True)
@@ -479,11 +497,11 @@ def draw_histogram_layers(
         )
         if len(values) >= 3:
             sns.kdeplot(x=values, ax=ax, color=color, linewidth=2.0)
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel("Density")
+    ax.set_title(title, fontsize=FONT_SIZE)
+    ax.set_xlabel(x_label, fontsize=FONT_SIZE)
+    ax.set_ylabel("Density", fontsize=FONT_SIZE)
     ax.grid(True, alpha=0.25)
-    ax.legend()
+    ax.legend(fontsize=FONT_SIZE, title_fontsize=FONT_SIZE)
 
 
 def render_two_class_histogram_plot(

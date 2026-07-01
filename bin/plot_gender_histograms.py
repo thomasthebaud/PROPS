@@ -35,6 +35,7 @@ from utils import (
 
 
 DEFAULT_OUTPUT = Path("graphs/GMMs_visuals/gender_histograms.png")
+FONT_SIZE = 15
 GENDER_ORDER = ["male", "female"]
 LINE_STYLES = {
     "real": ":",
@@ -171,8 +172,8 @@ def render_overlay_histogram(
     title: str,
 ) -> None:
     sns.set_theme(style="whitegrid", context="notebook")
-    fig, ax = plt.subplots(figsize=(9.5, 5.4))
-
+    fig, ax = plt.subplots(figsize=(9.5, 4))
+    plt.tight_layout()
     all_values = []
     for profile in projected_profiles:
         all_values.extend(np.asarray(profile["test_xvectors"])[:, 0])
@@ -195,9 +196,9 @@ def render_overlay_histogram(
                 label=f"{gender} {source}",
             )
 
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel("Density")
+    ax.set_title(title, fontsize=FONT_SIZE)
+    ax.set_xlabel(x_label, fontsize=FONT_SIZE)
+    ax.set_ylabel("Density", fontsize=FONT_SIZE)
     ax.grid(True, alpha=0.25)
     handles = [
         Line2D([0], [0], color=COLORS[("male", "real")], linestyle=":", linewidth=2.1, label="male real"),
@@ -205,7 +206,7 @@ def render_overlay_histogram(
         Line2D([0], [0], color=COLORS[("female", "real")], linestyle=":", linewidth=2.1, label="female real"),
         Line2D([0], [0], color=COLORS[("female", "generated")], linestyle="-", linewidth=2.1, label="female generated"),
     ]
-    ax.legend(handles=handles, ncol=2, frameon=True)
+    ax.legend(handles=handles, ncol=2, frameon=True, fontsize=FONT_SIZE, title_fontsize=FONT_SIZE)
     fig.tight_layout()
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -222,7 +223,7 @@ def plot_histograms(profiles: list[dict[str, Any]], output_path: Path, include_l
     if include_lda:
         projected_lda, lda_x_label, _ = build_lda_projection(profiles)
         lda_output = prefixed_output_path(output_path, "LDA")
-        render_overlay_histogram(projected_lda, lda_output, lda_x_label, "LDA gender distributions")
+        render_overlay_histogram(projected_lda, lda_output, lda_x_label, "LDA of the generated and real x-vectors for male and females")
         output_paths.append(lda_output)
     return output_paths
 

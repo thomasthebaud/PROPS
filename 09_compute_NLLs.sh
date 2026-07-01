@@ -9,6 +9,7 @@ dataset_name="Capspeech_min100"
 model_name="ComposedGMM_MDN"
 gmm_init_path="exp/GMMs/${K}_components_precomputed"
 batch_size=128
+score_threads=16
 
 run_PretrainGMMs=0
 run_FinetuneGMMs=0
@@ -161,7 +162,10 @@ if [[ "$run_NLLScores" -eq 1 ]]; then
 
       for desc_column in "${desc_columns[@]}"; do
         output_csv="exp/NLL_scores/jobs/${model_variant}_${eval_set}_${desc_column}.csv"
-        srun -p cpu python bin/compute_nll_scores.py \
+        job_name="NLL_${model_variant}_${eval_set}_${desc_column}"
+        echo "Launching ${job_name} with ${score_threads} threads"
+        srun -p cpu -c "$score_threads" --job-name "$job_name" \
+          python bin/compute_nll_scores.py \
           --dataset-name "$dataset_name" \
           --k "$K" \
           --output-root exp/NLL_scores \
@@ -172,7 +176,8 @@ if [[ "$run_NLLScores" -eq 1 ]]; then
           --desc-column "$desc_column" \
           --weighting "$weighting" \
           --output-csv "$output_csv" \
-          --overwrite &
+          --num-load-workers "$score_threads" \
+          --num-score-workers "$score_threads" &
       done
     done
   done

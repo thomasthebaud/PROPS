@@ -298,6 +298,7 @@ def plot_results(
     output_path: Path,
 ) -> None:
     df = pd.DataFrame(nll_rows)
+    df['nll'] = -df['nll']
     ks = sorted(ks)
     positions = np.arange(len(ks), dtype=float)
     colors = {"dev": "#1f77b4", "test": "#ff7f0e"}
@@ -341,36 +342,37 @@ def plot_results(
 
     ax.set_xticks(positions)
     ax.set_xticklabels([str(int(k)) for k in ks])
-    ax.set_xlabel("Number of GMM components (K)")
-    ax.set_ylabel("Negative log-likelihood")
-    ax.set_title("Precomputed profile GMM NLL distributions")
+    ax.set_xlabel("Number of GMM components (K)", fontsize=18)
+    ax.set_ylabel("Negative Log-likelihood score", fontsize=18)
     ax.grid(True, axis="y", alpha=0.3)
 
     ax_counts = ax.twinx()
+    count_color = "#2ca02c"
     count_values = [profile_counts_by_k.get(int(k), 0) for k in ks]
-    count_line = ax_counts.plot(
+    ax_counts.plot(
         positions,
         count_values,
-        color="#2ca02c",
+        color=count_color,
         marker="D",
         linewidth=2.0,
-        label="profiles with >=2K xvectors",
         zorder=6,
-    )[0]
-    ax_counts.set_ylabel("Profiles with at least 2K xvectors")
+    )
+    ax_counts.set_ylabel("Profiles with at least 2K xvectors", color=count_color, fontsize=16)
+    ax_counts.tick_params(axis="y", colors=count_color)
+    ax_counts.spines["right"].set_color(count_color)
     y_offset = max(count_values) * 0.015 if count_values else 0.0
     for position, count in zip(positions, count_values):
         ax_counts.text(
             position,
             count + y_offset,
             str(count),
-            color="#2ca02c",
+            color=count_color,
             fontsize=7,
             ha="center",
             va="bottom",
         )
 
-    ax.legend(handles=[*legend_handles, count_line], title="Split / count", loc="lower left")
+    ax.legend(handles=legend_handles, title="Split", loc="lower left")
     fig.tight_layout()
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output_path, dpi=220)

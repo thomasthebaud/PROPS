@@ -20,6 +20,16 @@ FIELDNAMES = [
     "total_num_classifier_train_xvectors",
     "classifier_train_accuracy",
     "real_test_accuracy",
+    "real_test_micro_accuracy",
+    "real_test_macro_accuracy",
+    "generated_micro_accuracy",
+    "generated_macro_accuracy",
+    "real_test_correlation",
+    "generated_correlation",
+    "real_test_micro_f1",
+    "real_test_macro_f1",
+    "generated_micro_f1",
+    "generated_macro_f1",
     "real_test_num_xvectors",
     "gmm_id",
     "gmm_path",
@@ -89,11 +99,25 @@ def format_accuracy(value: Any) -> str:
     return f"{100.0 * parsed:.1f}"
 
 
+def format_correlation(value: Any) -> str:
+    parsed = parse_float(value)
+    if parsed is None:
+        return "--"
+    return f"{parsed:.3f}"
+
+
+def metric_value(row: dict[str, Any], primary: str, fallback: str | None = None) -> Any:
+    value = row.get(primary)
+    if parse_float(value) is not None or fallback is None:
+        return value
+    return row.get(fallback)
+
+
 def write_latex(path: Path, overall_rows: list[dict[str, Any]]) -> None:
     lines = [
-        r"\begin{tabular}{lrr}",
+        r"\begin{tabular}{lrrrrrrrrrr}",
         r"\hline",
-        r"Characteristic & Real test macro acc. & Generated macro acc. \\",
+        "Characteristic & Real micro acc. & Real macro acc. & Generated micro acc. & Generated macro acc. & Real corr. & Generated corr. & Real micro F1 & Real macro F1 & Generated micro F1 & Generated macro F1 \\\\",
         r"\hline",
     ]
     for row in overall_rows:
@@ -101,8 +125,16 @@ def write_latex(path: Path, overall_rows: list[dict[str, Any]]) -> None:
             " & ".join(
                 [
                     latex_escape(row["characteristic"]),
-                    format_accuracy(row.get("real_test_accuracy")),
-                    format_accuracy(row.get("accuracy")),
+                    format_accuracy(row.get("real_test_micro_accuracy")),
+                    format_accuracy(metric_value(row, "real_test_macro_accuracy", "real_test_accuracy")),
+                    format_accuracy(row.get("generated_micro_accuracy")),
+                    format_accuracy(metric_value(row, "generated_macro_accuracy", "accuracy")),
+                    format_correlation(row.get("real_test_correlation")),
+                    format_correlation(row.get("generated_correlation")),
+                    format_accuracy(row.get("real_test_micro_f1")),
+                    format_accuracy(row.get("real_test_macro_f1")),
+                    format_accuracy(row.get("generated_micro_f1")),
+                    format_accuracy(row.get("generated_macro_f1")),
                 ]
             )
             + r" \\",
@@ -125,9 +157,28 @@ def main() -> int:
 
     overall_rows = [row for row in merged_rows if row.get("label") == "overall"]
     if overall_rows:
-        average_generated = mean_or_none([value for row in overall_rows if (value := parse_float(row.get("accuracy"))) is not None])
-        average_real = mean_or_none([value for row in overall_rows if (value := parse_float(row.get("real_test_accuracy"))) is not None])
         average_train = mean_or_none([value for row in overall_rows if (value := parse_float(row.get("classifier_train_accuracy"))) is not None])
+        average_metrics = {
+            key: mean_or_none([value for row in overall_rows if (value := parse_float(row.get(key))) is not None])
+            for key in (
+                "real_test_micro_accuracy",
+                "real_test_macro_accuracy",
+                "generated_micro_accuracy",
+                "generated_macro_accuracy",
+                "real_test_correlation",
+                "generated_correlation",
+                "real_test_micro_f1",
+                "real_test_macro_f1",
+                "generated_micro_f1",
+                "generated_macro_f1",
+            )
+        }
+        average_generated = average_metrics["generated_macro_accuracy"]
+        if average_generated is None:
+            average_generated = mean_or_none([value for row in overall_rows if (value := parse_float(row.get("accuracy"))) is not None])
+        average_real = average_metrics["real_test_macro_accuracy"]
+        if average_real is None:
+            average_real = mean_or_none([value for row in overall_rows if (value := parse_float(row.get("real_test_accuracy"))) is not None])
         average_row = {
             "characteristic": "average",
             "label": "macro_over_characteristics",
@@ -138,6 +189,16 @@ def main() -> int:
             "total_num_classifier_train_xvectors": "",
             "classifier_train_accuracy": average_train if average_train is not None else "",
             "real_test_accuracy": average_real if average_real is not None else "",
+            "real_test_micro_accuracy": average_metrics["real_test_micro_accuracy"] if average_metrics["real_test_micro_accuracy"] is not None else "",
+            "real_test_macro_accuracy": average_metrics["real_test_macro_accuracy"] if average_metrics["real_test_macro_accuracy"] is not None else "",
+            "generated_micro_accuracy": average_metrics["generated_micro_accuracy"] if average_metrics["generated_micro_accuracy"] is not None else "",
+            "generated_macro_accuracy": average_metrics["generated_macro_accuracy"] if average_metrics["generated_macro_accuracy"] is not None else "",
+            "real_test_correlation": average_metrics["real_test_correlation"] if average_metrics["real_test_correlation"] is not None else "",
+            "generated_correlation": average_metrics["generated_correlation"] if average_metrics["generated_correlation"] is not None else "",
+            "real_test_micro_f1": average_metrics["real_test_micro_f1"] if average_metrics["real_test_micro_f1"] is not None else "",
+            "real_test_macro_f1": average_metrics["real_test_macro_f1"] if average_metrics["real_test_macro_f1"] is not None else "",
+            "generated_micro_f1": average_metrics["generated_micro_f1"] if average_metrics["generated_micro_f1"] is not None else "",
+            "generated_macro_f1": average_metrics["generated_macro_f1"] if average_metrics["generated_macro_f1"] is not None else "",
             "real_test_num_xvectors": "",
             "gmm_id": "",
             "gmm_path": "",

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-K=256
+K=2048
 num_shards=10
 num_workers=16
 output_dir="exp/GMMs/${K}_components_precomputed"
@@ -13,7 +13,7 @@ echo "Using job name prefix ${job_group_id}"
 
 for ((shard = 0; shard < num_shards; shard++)); do
   shard_job_name="${job_group_id}_$((shard + 1))"
-  srun -p cpu -c $num_workers --job-name "$shard_job_name" python bin/precompute_GMMs.py \
+  srun -p cpu -c $num_workers --job-name "$shard_job_name" --mem 64Gb python bin/precompute_GMMs.py \
     --train-csv-paths "data/${dataset_name}/train.csv" \
     --data-root data \
     --xvector-root exp/xvectors/ecapa_tdnn \

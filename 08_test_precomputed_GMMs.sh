@@ -7,8 +7,8 @@ cd "$script_dir"
 dataset_name="Capspeech"
 profile_counts_dataset="Capspeech"
 
-Ks="1,2,4,8,16,32,64,128,256,512,1024,2048"
-K_values=(1 2 4 8 16 32 64 128 256 512 1024 2048)
+Ks="1,2,4,8,16,32,64,128,256,512,1024"
+K_values=(1 2 4 8 16 32 64 128 256 512 1024)
 num_shards=10
 num_workers=16
 precompute_gmm_root="exp/GMMs/stage08_precomputed"

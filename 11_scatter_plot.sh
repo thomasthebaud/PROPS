@@ -40,14 +40,14 @@ ac="unknown"
 #   --lda &
 
 
-# echo "Plotting gender histogram for K=${K}"
-# srun -p cpu python bin/plot_gender_histograms.py \
-#   --test-csv-paths "$dataset_name" \
-#   --gmm-metadata-csv "$gmm_metadata_csv" \
-#   --samples "$N" \
-#   --ground-truth-components "$K" \
-#   --output "exp/graphs/${run_name}/scatter/K=${K}_male,female_test.png" \
-#   --lda &
+echo "Plotting gender histogram for K=${K}"
+srun -p cpu python bin/plot_gender_histograms.py \
+  --test-csv-paths "$dataset_name" \
+  --gmm-metadata-csv "$gmm_metadata_csv" \
+  --samples "$N" \
+  --ground-truth-components "$K" \
+  --output "exp/graphs/${run_name}/scatter/K=${K}_male,female_test.png" \
+  --lda &
 
 g="unknown"
 a="unknown"
