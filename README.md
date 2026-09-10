@@ -1,6 +1,7 @@
 # ProPs: Prompted Profile Synthesis for Natural Language-Conditioned Speaker Embedding Generation
 
 This repository contains the experiment pipeline for **ProPs**, a method for generating speaker-embedding distributions from natural-language speaker-profile descriptions. The current workflow builds a merged Capspeech-style metadata set, extracts ECAPA-TDNN x-vectors, creates profile descriptions, precomputes real profile GMMs, trains a composed GMM MDN, generates profile-conditioned GMMs, and evaluates whether generated samples preserve requested characteristics.
+Those are the only files used to compute all results presented in the SLT 2026 article entitled the same way.
 
 The top-level numbered shell scripts are the intended workflow entry points. They are written for a SLURM cluster and call Python jobs through `srun`.
 
@@ -453,12 +454,13 @@ srun -p cpu python ...
 On a non-SLURM machine, remove the `srun ...` prefix and run the Python commands directly.
 
 ## Citation
-
+Arxiv link will be replaced once the SLT 2026 publication is out.
 ```bibtex
-@misc{
-  title         = {},
-  archivePrefix = {arXiv},
-  eprint        = {},
-  year          = {},
+@article{thebaud2026props,
+  title={ProPS: Prompted Profile Synthesis for Natural Language-Conditioned Speaker Embedding Distributions},
+  author={Thebaud, Thomas and Lee, Junhyeok and Moro-Velazquez, Laureano and Lopez, Jesus Villalba and Dehak, Najim},
+  journal={arXiv preprint arXiv:2607.05276},
+  year={2026}
 }
+
 ```
